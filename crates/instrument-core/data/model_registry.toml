@@ -1,0 +1,50 @@
+# IVI-registry-inspired hints: manufacturer + model -> instrument kinds.
+# These are hints only; capability probing and *IDN? override when ambiguous.
+
+[[entry]]
+manufacturer = "Keysight Technologies"
+model = "34401A"
+kinds = ["Dmm"]
+
+[[entry]]
+manufacturer = "Agilent Technologies"
+model = "34401A"
+kinds = ["Dmm"]
+
+[[entry]]
+manufacturer = "Keithley Instruments"
+model = "2602B"
+kinds = ["Dmm", "DcPowerSupply"]
+
+[[entry]]
+manufacturer = "Keithley Instruments"
+model = "E36312A"
+kinds = ["DcPowerSupply"]
+
+[[entry]]
+manufacturer = "Keysight Technologies"
+model = "E36312A"
+kinds = ["DcPowerSupply"]
+
+[[entry]]
+manufacturer = "Keysight Technologies"
+model = "33522B"
+kinds = ["FunctionGenerator"]
+
+[[entry]]
+manufacturer = "Rigol Technologies"
+model = "DP832"
+kinds = ["DcPowerSupply"]
+
+[[entry]]
+manufacturer = "Rigol Technologies"
+model = "DG4102"
+kinds = ["FunctionGenerator"]
+
+# USB VID/PID hints (hex strings without 0x prefix)
+[[usb_entry]]
+vid = "0957"
+pid = "0607"
+manufacturer = "Keysight Technologies"
+model = "34401A"
+kinds = ["Dmm"]

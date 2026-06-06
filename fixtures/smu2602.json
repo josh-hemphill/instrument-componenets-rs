@@ -1,0 +1,6 @@
+{
+  "steps": [
+    { "op": "write", "data": ":MEAS:VOLT:DC?\n" },
+    { "op": "read", "data": "3.300\n" }
+  ]
+}

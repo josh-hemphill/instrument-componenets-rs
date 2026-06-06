@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --no-default-features -- -D warnings
+      - run: cargo test --workspace --no-default-features
+      - run: cargo doc --no-deps --workspace --no-default-features
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  package-core:
+    name: Package instrument-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish -p instrument-core --dry-run --allow-dirty
+
+  cross-compile:
+    name: Cross-compile check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p instrument-visa --features cross-compile --target x86_64-pc-windows-gnu
+
+  tokio:
+    name: Tokio feature check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p instrument-components --features visa,tokio
+      - run: cargo clippy -p instrument-core --features async -- -D warnings
+      - run: cargo test -p instrument-core --features async
+      - run: cargo test -p instrument-components --features tokio --no-default-features

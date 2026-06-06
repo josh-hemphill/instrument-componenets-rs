@@ -1,0 +1,23 @@
+[package]
+name = "instrument-visa"
+description = "NI-VISA / Keysight VISA backend for instrument-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+instrument-core.workspace = true
+visa-rs.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, optional = true }
+
+[features]
+default = []
+cross-compile = ["visa-rs/cross-compile"]
+tokio = ["visa-rs/tokio", "dep:tokio", "instrument-core/async"]

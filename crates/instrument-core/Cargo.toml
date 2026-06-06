@@ -1,0 +1,37 @@
+[package]
+name = "instrument-core"
+description = "VISA-agnostic transport, SCPI session, discovery, and mock fixtures for instrument control"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+exclude = ["/fixtures"]
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+toml = "0.8"
+tokio = { workspace = true, optional = true }
+
+[features]
+default = []
+async = ["dep:tokio"]
+record = []
+
+[dev-dependencies]
+serde_json.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+
+[[test]]
+name = "async_reliability"
+required-features = ["async"]
+
+[[test]]
+name = "async_diagnostics"
+required-features = ["async"]
