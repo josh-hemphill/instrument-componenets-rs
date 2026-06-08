@@ -25,9 +25,7 @@ pub use instrument_core::{
 };
 
 #[cfg(all(feature = "visa", feature = "tokio"))]
-pub use instrument_visa::{
-    InstrumentTokioAdapter, VisaAsyncSessionOpener, VisaAsyncTransport,
-};
+pub use instrument_visa::{InstrumentTokioAdapter, VisaAsyncSessionOpener, VisaAsyncTransport};
 
 #[cfg(feature = "record")]
 pub use instrument_core::RecordingTransport;

@@ -107,9 +107,7 @@ pub use instrument_core::{
 };
 
 #[cfg(all(feature = "visa", feature = "tokio"))]
-pub use instrument_visa::{
-    InstrumentTokioAdapter, VisaAsyncSessionOpener, VisaAsyncTransport,
-};
+pub use instrument_visa::{InstrumentTokioAdapter, VisaAsyncSessionOpener, VisaAsyncTransport};
 
 #[cfg(feature = "visa")]
 pub use instrument_visa::{SharedRm, VisaEnumerator, VisaSessionOpener};
