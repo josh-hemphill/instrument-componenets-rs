@@ -26,7 +26,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --no-default-features -- -D warnings
-      - run: cargo test --workspace --no-default-features
+      # instrument-visa links libvisa unconditionally; runners have no VISA.
+      # It is compile-checked by the cross-compile and tokio jobs instead.
+      - run: cargo test --workspace --exclude instrument-visa --no-default-features
       - run: cargo doc --no-deps --workspace --no-default-features
         env:
           RUSTDOCFLAGS: -D warnings
