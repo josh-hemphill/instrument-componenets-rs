@@ -3,7 +3,7 @@
 //! This crate has no VISA dependency. Use [`Transport`] for byte I/O,
 //! [`ScpiSession`] for SCPI framing, and [`ScriptedFixture`] for CI mocks.
 //!
-//! Enable the `async` feature for [`AsyncTransport`] and [`AsyncScpiSession`]
+//! Enable the `async` feature for `AsyncTransport` and `AsyncScpiSession`
 //! with the same framing and retry semantics as the sync path.
 //!
 //! For the full discovery and typed-class API, use the `instrument-components` facade.
