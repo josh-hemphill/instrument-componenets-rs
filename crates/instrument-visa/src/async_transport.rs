@@ -1,4 +1,5 @@
 use crate::error::map_visa_error;
+use crate::transport::visa_timeout_ms;
 use instrument_core::async_transport::AsyncTransport;
 use instrument_core::connect::ConnectOptions;
 use instrument_core::error::{Error, Result, TransportError};
@@ -98,8 +99,7 @@ impl AsyncTransport for VisaAsyncTransport {
         timeout: Duration,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {
         Box::pin(async move {
-            let ms = timeout.as_millis().min(u32::MAX as u128) as u32;
-            let attr = AttrTmoValue::new_checked(ms)
+            let attr = AttrTmoValue::new_checked(visa_timeout_ms(timeout))
                 .ok_or_else(|| Error::Parse("invalid VISA timeout value".into()))?;
             self.with_sync_instrument(move |instr| instr.set_attr(attr))
         })

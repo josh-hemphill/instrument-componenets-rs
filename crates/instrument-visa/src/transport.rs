@@ -11,6 +11,13 @@ use visa_rs::enums::attribute::{
 };
 use visa_rs::prelude::Instrument;
 
+/// Converts a duration to VISA timeout milliseconds (platform-specific `ViUInt32` width).
+pub(crate) fn visa_timeout_ms(timeout: Duration) -> visa_rs::vs::ViUInt32 {
+    timeout
+        .as_millis()
+        .min(visa_rs::vs::ViUInt32::MAX as u128) as visa_rs::vs::ViUInt32
+}
+
 /// VISA instrument session transport.
 pub struct VisaTransport {
     instrument: Instrument,
@@ -56,8 +63,7 @@ impl Transport for VisaTransport {
     }
 
     fn set_read_timeout(&mut self, timeout: Duration) -> Result<()> {
-        let ms = timeout.as_millis().min(u32::MAX as u128) as u32;
-        let attr = AttrTmoValue::new_checked(ms)
+        let attr = AttrTmoValue::new_checked(visa_timeout_ms(timeout))
             .ok_or_else(|| Error::Parse("invalid VISA timeout value".into()))?;
         self.instrument.set_attr(attr).map_err(map_visa_error)
     }
