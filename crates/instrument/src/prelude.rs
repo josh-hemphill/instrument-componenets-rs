@@ -24,11 +24,10 @@ pub use instrument_core::{
     DynAsyncTransport,
 };
 
-#[cfg(feature = "tokio")]
-pub use instrument_visa::InstrumentTokioAdapter;
-
 #[cfg(all(feature = "visa", feature = "tokio"))]
-pub use instrument_visa::{VisaAsyncSessionOpener, VisaAsyncTransport};
+pub use instrument_visa::{
+    InstrumentTokioAdapter, VisaAsyncSessionOpener, VisaAsyncTransport,
+};
 
 #[cfg(feature = "record")]
 pub use instrument_core::RecordingTransport;

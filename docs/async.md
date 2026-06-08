@@ -16,8 +16,10 @@ Feature chain:
 
 ```
 instrument-components/tokio
-  → instrument-visa/tokio → visa-rs/tokio
   → instrument-core/async
+
+instrument-components/visa + tokio
+  → instrument-visa/tokio → visa-rs/tokio
 ```
 
 Default (`features = ["visa"]` only) does **not** pull in tokio.

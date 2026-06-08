@@ -23,8 +23,8 @@ tokio = { workspace = true, optional = true }
 [features]
 default = ["visa"]
 visa = ["dep:instrument-visa"]
-tokio = ["instrument-visa/tokio", "instrument-core/async", "dep:tokio"]
-cross-compile = ["instrument-visa/cross-compile"]
+tokio = ["instrument-core/async", "dep:tokio", "instrument-visa?/tokio"]
+cross-compile = ["instrument-visa?/cross-compile"]
 record = ["instrument-core/record"]
 
 [[example]]
