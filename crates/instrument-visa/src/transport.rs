@@ -13,9 +13,7 @@ use visa_rs::prelude::Instrument;
 
 /// Converts a duration to VISA timeout milliseconds (platform-specific `ViUInt32` width).
 pub(crate) fn visa_timeout_ms(timeout: Duration) -> visa_rs::vs::ViUInt32 {
-    timeout
-        .as_millis()
-        .min(visa_rs::vs::ViUInt32::MAX as u128) as visa_rs::vs::ViUInt32
+    timeout.as_millis().min(visa_rs::vs::ViUInt32::MAX as u128) as visa_rs::vs::ViUInt32
 }
 
 /// VISA instrument session transport.
