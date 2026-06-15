@@ -31,9 +31,24 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
+  nuget:
+    name: Publish to NuGet
+    needs: ci
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+      - run: deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet pack dotnet/src/InstrumentComponents/InstrumentComponents.csproj -c Release -o nupkg
+      - run: dotnet pack dotnet/src/InstrumentComponents.Visa/InstrumentComponents.Visa.csproj -c Release -o nupkg
+      - run: dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
   github-release:
     name: GitHub Release
-    needs: publish
+    needs: [publish, nuget]
     runs-on: ubuntu-latest
     permissions:
       contents: write

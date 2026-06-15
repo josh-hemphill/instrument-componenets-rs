@@ -1,4 +1,4 @@
-use crate::classes::{DcPowerSupply, Dmm, FunctionGenerator};
+use crate::classes::{Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, Switch};
 use instrument_core::connect::ConnectOptions;
 use instrument_core::diagnostics::{CommsObserver, DeviceHealth, Diagnostics};
 use instrument_core::error::Result;
@@ -96,6 +96,33 @@ impl DeviceRef {
             &self.device.supported_kinds,
         )?;
         Ok(FunctionGenerator::new(self.open_session()?))
+    }
+
+    pub fn open_oscilloscope(&self) -> Result<Oscilloscope> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::Oscilloscope,
+            &self.device.supported_kinds,
+        )?;
+        Ok(Oscilloscope::new(self.open_session()?))
+    }
+
+    pub fn open_switch(&self) -> Result<Switch> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::Switch,
+            &self.device.supported_kinds,
+        )?;
+        Ok(Switch::new(self.open_session()?))
+    }
+
+    pub fn open_counter(&self) -> Result<Counter> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::Counter,
+            &self.device.supported_kinds,
+        )?;
+        Ok(Counter::new(self.open_session()?))
     }
 
     pub fn open_untyped(&self) -> Result<InstrumentSession> {

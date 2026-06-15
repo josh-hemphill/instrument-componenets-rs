@@ -41,6 +41,36 @@ manufacturer = "Rigol Technologies"
 model = "DG4102"
 kinds = ["FunctionGenerator"]
 
+[[entry]]
+manufacturer = "Rigol Technologies"
+model = "DS1054Z"
+kinds = ["Oscilloscope"]
+
+[[entry]]
+manufacturer = "Keysight Technologies"
+model = "DSOX2024A"
+kinds = ["Oscilloscope"]
+
+[[entry]]
+manufacturer = "Keysight Technologies"
+model = "34970A"
+kinds = ["Switch"]
+
+[[entry]]
+manufacturer = "Keithley Instruments"
+model = "3706A"
+kinds = ["Switch"]
+
+[[entry]]
+manufacturer = "Keysight Technologies"
+model = "53230A"
+kinds = ["Counter"]
+
+[[entry]]
+manufacturer = "Agilent Technologies"
+model = "53131A"
+kinds = ["Counter"]
+
 # USB VID/PID hints (hex strings without 0x prefix)
 [[usb_entry]]
 vid = "0957"

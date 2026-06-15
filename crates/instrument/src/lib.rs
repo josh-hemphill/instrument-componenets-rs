@@ -60,27 +60,45 @@ pub mod async_device;
 pub mod async_discovery;
 
 pub mod classes {
+    pub mod counter;
     pub mod dc_psu;
     pub mod dmm;
     pub mod fgen;
+    pub mod scope;
+    pub mod switch;
 
+    #[cfg(feature = "tokio")]
+    pub mod async_counter;
     #[cfg(feature = "tokio")]
     pub mod async_dc_psu;
     #[cfg(feature = "tokio")]
     pub mod async_dmm;
     #[cfg(feature = "tokio")]
     pub mod async_fgen;
+    #[cfg(feature = "tokio")]
+    pub mod async_scope;
+    #[cfg(feature = "tokio")]
+    pub mod async_switch;
 
+    pub use counter::Counter;
     pub use dc_psu::DcPowerSupply;
     pub use dmm::Dmm;
     pub use fgen::FunctionGenerator;
+    pub use scope::{Oscilloscope, VoltageTrace};
+    pub use switch::Switch;
 
+    #[cfg(feature = "tokio")]
+    pub use async_counter::AsyncCounter;
     #[cfg(feature = "tokio")]
     pub use async_dc_psu::AsyncDcPowerSupply;
     #[cfg(feature = "tokio")]
     pub use async_dmm::AsyncDmm;
     #[cfg(feature = "tokio")]
     pub use async_fgen::AsyncFunctionGenerator;
+    #[cfg(feature = "tokio")]
+    pub use async_scope::AsyncOscilloscope;
+    #[cfg(feature = "tokio")]
+    pub use async_switch::AsyncSwitch;
 }
 
 pub use catalog::DeviceCatalog;

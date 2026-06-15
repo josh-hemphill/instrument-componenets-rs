@@ -10,8 +10,9 @@ use crate::registry::ModelRegistry;
 use crate::scpi::ScpiSession;
 use crate::transport::TransportIdentity;
 use probes::{
-    probe_any, DMM_ACQUISITION_COMMANDS, DMM_READONLY_COMMANDS, FGEN_READONLY_COMMANDS,
-    PROBE_TIMEOUT, PSU_READONLY_COMMANDS,
+    probe_any, COUNTER_READONLY_COMMANDS, DMM_ACQUISITION_COMMANDS, DMM_READONLY_COMMANDS,
+    FGEN_READONLY_COMMANDS, PROBE_TIMEOUT, PSU_READONLY_COMMANDS, SCOPE_READONLY_COMMANDS,
+    SWITCH_READONLY_COMMANDS,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -207,6 +208,30 @@ fn classify_readonly_probes(session: &mut ScpiSession) -> Vec<ClassifiedKind> {
         });
     }
 
+    if probe_any(session, SCOPE_READONLY_COMMANDS, PROBE_TIMEOUT) {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::Oscilloscope,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any(session, SWITCH_READONLY_COMMANDS, PROBE_TIMEOUT) {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::Switch,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any(session, COUNTER_READONLY_COMMANDS, PROBE_TIMEOUT) {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::Counter,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
     kinds
 }
 
@@ -270,6 +295,30 @@ async fn classify_readonly_probes_async(session: &mut AsyncScpiSession) -> Vec<C
     if probe_any_async(session, FGEN_READONLY_COMMANDS, PROBE_TIMEOUT).await {
         kinds.push(ClassifiedKind {
             kind: InstrumentKind::FunctionGenerator,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any_async(session, SCOPE_READONLY_COMMANDS, PROBE_TIMEOUT).await {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::Oscilloscope,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any_async(session, SWITCH_READONLY_COMMANDS, PROBE_TIMEOUT).await {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::Switch,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any_async(session, COUNTER_READONLY_COMMANDS, PROBE_TIMEOUT).await {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::Counter,
             confidence: 85,
             source: ClassifySource::CapabilityProbe,
         });
@@ -385,5 +434,71 @@ mod tests {
             Some(&[InstrumentKind::Dmm]),
         );
         assert_eq!(kinds, vec![InstrumentKind::Dmm]);
+    }
+
+    #[test]
+    fn scope_readonly_probe_succeeds() {
+        use crate::connect::ConnectOptions;
+        use crate::mock::{MockTransport, ScriptStep};
+        use probes::{probe_any, PROBE_TIMEOUT, SCOPE_READONLY_COMMANDS};
+
+        let transport = MockTransport::from_script(vec![
+            ScriptStep::Write {
+                data: ":TIMebase:SCALe?\n".into(),
+            },
+            ScriptStep::Read {
+                data: "1e-3\n".into(),
+            },
+        ]);
+        let mut session = ScpiSession::new(Box::new(transport), ConnectOptions::default()).unwrap();
+        assert!(probe_any(
+            &mut session,
+            SCOPE_READONLY_COMMANDS,
+            PROBE_TIMEOUT
+        ));
+    }
+
+    #[test]
+    fn switch_readonly_probe_succeeds() {
+        use crate::connect::ConnectOptions;
+        use crate::mock::{MockTransport, ScriptStep};
+        use probes::{probe_any, PROBE_TIMEOUT, SWITCH_READONLY_COMMANDS};
+
+        let transport = MockTransport::from_script(vec![
+            ScriptStep::Write {
+                data: ":ROUTe:CLOS?\n".into(),
+            },
+            ScriptStep::Read {
+                data: "0\n".into(),
+            },
+        ]);
+        let mut session = ScpiSession::new(Box::new(transport), ConnectOptions::default()).unwrap();
+        assert!(probe_any(
+            &mut session,
+            SWITCH_READONLY_COMMANDS,
+            PROBE_TIMEOUT
+        ));
+    }
+
+    #[test]
+    fn counter_readonly_probe_succeeds() {
+        use crate::connect::ConnectOptions;
+        use crate::mock::{MockTransport, ScriptStep};
+        use probes::{probe_any, COUNTER_READONLY_COMMANDS, PROBE_TIMEOUT};
+
+        let transport = MockTransport::from_script(vec![
+            ScriptStep::Write {
+                data: ":COUNter:DATA?\n".into(),
+            },
+            ScriptStep::Read {
+                data: "42\n".into(),
+            },
+        ]);
+        let mut session = ScpiSession::new(Box::new(transport), ConnectOptions::default()).unwrap();
+        assert!(probe_any(
+            &mut session,
+            COUNTER_READONLY_COMMANDS,
+            PROBE_TIMEOUT
+        ));
     }
 }

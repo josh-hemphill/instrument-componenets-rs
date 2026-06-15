@@ -9,6 +9,29 @@ pub const PSU_READONLY_COMMANDS: &[&str] = &[":OUTP? 1", "OUTP? 1", ":OUTP?", "O
 
 pub const FGEN_READONLY_COMMANDS: &[&str] = &[":SOUR:FUNC?", "SOUR:FUNC?"];
 
+pub const SCOPE_READONLY_COMMANDS: &[&str] = &[
+    ":TIMebase:SCALe?",
+    "TIMebase:SCALe?",
+    ":CHAN1:SCALe?",
+    "CHAN1:SCALe?",
+    ":WAVeform:SOURce?",
+    "WAVeform:SOURce?",
+];
+
+pub const SWITCH_READONLY_COMMANDS: &[&str] = &[
+    ":ROUTe:CLOS?",
+    "ROUT:CLOS?",
+    ":ROUTe:CAT?",
+    "ROUT:CAT?",
+];
+
+pub const COUNTER_READONLY_COMMANDS: &[&str] = &[
+    ":COUNter:DATA?",
+    "COUN:DATA?",
+    ":COUNter:A:DATA?",
+    "COUN:A:DATA?",
+];
+
 pub const DMM_ACQUISITION_COMMANDS: &[&str] = &[":MEAS:VOLT:DC?", "MEAS:VOLT:DC?"];
 
 /// Returns true when any probe command succeeds on the session.

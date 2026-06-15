@@ -1,0 +1,114 @@
+{
+  "entries": [
+    {
+      "manufacturer": "Keysight Technologies",
+      "model": "34401A",
+      "kinds": [
+        "Dmm"
+      ]
+    },
+    {
+      "manufacturer": "Agilent Technologies",
+      "model": "34401A",
+      "kinds": [
+        "Dmm"
+      ]
+    },
+    {
+      "manufacturer": "Keithley Instruments",
+      "model": "2602B",
+      "kinds": [
+        "Dmm",
+        "DcPowerSupply"
+      ]
+    },
+    {
+      "manufacturer": "Keithley Instruments",
+      "model": "E36312A",
+      "kinds": [
+        "DcPowerSupply"
+      ]
+    },
+    {
+      "manufacturer": "Keysight Technologies",
+      "model": "E36312A",
+      "kinds": [
+        "DcPowerSupply"
+      ]
+    },
+    {
+      "manufacturer": "Keysight Technologies",
+      "model": "33522B",
+      "kinds": [
+        "FunctionGenerator"
+      ]
+    },
+    {
+      "manufacturer": "Rigol Technologies",
+      "model": "DP832",
+      "kinds": [
+        "DcPowerSupply"
+      ]
+    },
+    {
+      "manufacturer": "Rigol Technologies",
+      "model": "DG4102",
+      "kinds": [
+        "FunctionGenerator"
+      ]
+    },
+    {
+      "manufacturer": "Rigol Technologies",
+      "model": "DS1054Z",
+      "kinds": [
+        "Oscilloscope"
+      ]
+    },
+    {
+      "manufacturer": "Keysight Technologies",
+      "model": "DSOX2024A",
+      "kinds": [
+        "Oscilloscope"
+      ]
+    },
+    {
+      "manufacturer": "Keysight Technologies",
+      "model": "34970A",
+      "kinds": [
+        "Switch"
+      ]
+    },
+    {
+      "manufacturer": "Keithley Instruments",
+      "model": "3706A",
+      "kinds": [
+        "Switch"
+      ]
+    },
+    {
+      "manufacturer": "Keysight Technologies",
+      "model": "53230A",
+      "kinds": [
+        "Counter"
+      ]
+    },
+    {
+      "manufacturer": "Agilent Technologies",
+      "model": "53131A",
+      "kinds": [
+        "Counter"
+      ]
+    }
+  ],
+  "usbEntries": [
+    {
+      "vid": "0957",
+      "pid": "0607",
+      "manufacturer": "Keysight Technologies",
+      "model": "34401A",
+      "kinds": [
+        "Dmm"
+      ]
+    }
+  ]
+}

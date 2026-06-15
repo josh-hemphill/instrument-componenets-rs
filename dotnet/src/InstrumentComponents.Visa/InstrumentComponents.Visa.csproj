@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>InstrumentComponents.Visa</RootNamespace>
+    <AssemblyName>InstrumentComponents.Visa</AssemblyName>
+    <PackageId>InstrumentComponents.Visa</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>josh-hemphill</Authors>
+    <Description>NI-VISA / Keysight VISA backend for InstrumentComponents over vendor-neutral IviFoundation.Visa.</Description>
+    <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/josh-hemphill/instrument-components-rs</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/josh-hemphill/instrument-components-rs</RepositoryUrl>
+    <PackageTags>visa;scpi;instrument;test-equipment;dmm;ivi</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IviFoundation.Visa" Version="8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InstrumentComponents\InstrumentComponents.csproj" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

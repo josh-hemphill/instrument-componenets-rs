@@ -8,9 +8,9 @@ Quick reference for the main public types. Full rustdoc on [docs.rs](https://doc
 use instrument::prelude::*;
 ```
 
-Re-exports: `Discovery`, `DeviceCatalog`, `DeviceRef`, `Dmm`, `DcPowerSupply`, `FunctionGenerator`, `InstrumentKind`, `ProbePolicy`, `ScriptedFixture`, `Error`, `Result`, and more.
+Re-exports: `Discovery`, `DeviceCatalog`, `DeviceRef`, `Dmm`, `DcPowerSupply`, `FunctionGenerator`, `Oscilloscope`, `Switch`, `Counter`, `InstrumentKind`, `ProbePolicy`, `ScriptedFixture`, `Error`, `Result`, and more.
 
-With `tokio`: `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`, `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncScpiSession`, `AsyncInstrumentSession`.
+With `tokio`: `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`, `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`, `AsyncScpiSession`, `AsyncInstrumentSession`.
 
 ## Discovery and catalog
 
@@ -44,8 +44,11 @@ With `tokio`: `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`, `AsyncDm
 | `Dmm` | `measure_voltage_dc`, `measure_voltage_ac`, `measure_current_dc`, `measure_resistance` |
 | `DcPowerSupply` | `set_voltage`, `set_current`, `enable_output`, `read_voltage` |
 | `FunctionGenerator` | `set_waveform`, `set_frequency`, `set_amplitude`, `enable_output` |
+| `Oscilloscope` | `set_timebase_scale`, `set_channel_scale`, `run`, `stop`, `capture_voltage_trace` |
+| `Switch` | `close_route`, `open_route`, `is_closed`, `open_all` |
+| `Counter` | `measure_frequency`, `measure_period`, `reset_totalize`, `read_totalize` |
 
-Async counterparts (`AsyncDmm`, etc.) expose the same methods with `.await`.
+Async counterparts (`AsyncDmm`, `AsyncOscilloscope`, etc.) expose the same methods with `.await`.
 
 All numeric APIs use **SI base units** (V, A, Hz, s).
 

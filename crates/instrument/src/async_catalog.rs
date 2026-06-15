@@ -1,5 +1,8 @@
 use crate::async_device::AsyncDeviceRef;
-use crate::classes::{AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator};
+use crate::classes::{
+    AsyncCounter, AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator, AsyncOscilloscope,
+    AsyncSwitch,
+};
 use crate::mock_backend::MockAsyncSessionOpener;
 use instrument_core::address::ResourceAddress;
 use instrument_core::async_session::AsyncSessionOpener;
@@ -172,6 +175,18 @@ impl AsyncDeviceCatalog {
 
     pub async fn open_function_generator(&self, address: &str) -> Result<AsyncFunctionGenerator> {
         self.device(address)?.open_function_generator().await
+    }
+
+    pub async fn open_oscilloscope(&self, address: &str) -> Result<AsyncOscilloscope> {
+        self.device(address)?.open_oscilloscope().await
+    }
+
+    pub async fn open_switch(&self, address: &str) -> Result<AsyncSwitch> {
+        self.device(address)?.open_switch().await
+    }
+
+    pub async fn open_counter(&self, address: &str) -> Result<AsyncCounter> {
+        self.device(address)?.open_counter().await
     }
 
     pub fn print_summary(&self) {

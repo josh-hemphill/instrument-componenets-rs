@@ -58,7 +58,7 @@ pub use probe_policy::ProbePolicy;
 pub use registry::ModelRegistry;
 #[cfg(feature = "async")]
 pub use scpi::AsyncScpiSession;
-pub use scpi::{parse_f64, ScpiSession};
+pub use scpi::{parse_f64, parse_f64_csv, ScpiSession};
 pub use session::{InstrumentSession, SessionOpener, SessionPool};
 pub use transport::{Transport, TransportIdentity};
 

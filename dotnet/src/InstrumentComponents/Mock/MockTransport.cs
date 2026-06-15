@@ -1,0 +1,117 @@
+using System.Text;
+using InstrumentComponents.Address;
+using InstrumentComponents.Connect;
+using InstrumentComponents.Errors;
+using InstrumentComponents.Transport;
+
+namespace InstrumentComponents.Mock;
+
+/// <summary>Scripted request/response transport for deterministic CI.</summary>
+public sealed class MockTransport : TransportBase, IAsyncTransport
+{
+    private readonly List<ScriptStep> _script;
+    private readonly List<ScriptStep> _steps;
+    private int _stepIndex;
+    private TransportIdentity _identity = new();
+    private uint _failWritesRemaining;
+
+    public MockTransport(IReadOnlyList<ScriptStep> steps)
+    {
+        _script = steps.ToList();
+        _steps = steps.ToList();
+    }
+
+    public MockTransport Reopen()
+    {
+        var t = new MockTransport(_script) { _identity = _identity, _failWritesRemaining = _failWritesRemaining };
+        return t;
+    }
+
+    public IReadOnlyList<ScriptStep> Script => _script;
+
+    public MockTransport WithIdentity(TransportIdentity identity)
+    {
+        _identity = identity;
+        return this;
+    }
+
+    public MockTransport FailWrites(uint count)
+    {
+        _failWritesRemaining = count;
+        return this;
+    }
+
+    private ScriptStep NextStep()
+    {
+        if (_stepIndex >= _steps.Count)
+            throw new MockExhaustedException();
+        return _steps[_stepIndex++];
+    }
+
+    public override void Write(ReadOnlySpan<byte> data)
+    {
+        if (_failWritesRemaining > 0)
+        {
+            _failWritesRemaining--;
+            throw new InstrumentTimeoutException();
+        }
+
+        var step = NextStep();
+        if (step is WriteStep ws)
+        {
+            var actual = Encoding.UTF8.GetString(data);
+            if (NormalizeCmd(actual) != NormalizeCmd(ws.Data))
+                throw new MockMismatchException(ws.Data, actual);
+            return;
+        }
+        throw new MockMismatchException($"write, got {step.GetType().Name}", Encoding.UTF8.GetString(data));
+    }
+
+    public override int Read(Span<byte> buffer)
+    {
+        var step = NextStep();
+        if (step is ReadStep rs)
+        {
+            var bytes = Encoding.UTF8.GetBytes(rs.Data);
+            var n = Math.Min(buffer.Length, bytes.Length);
+            bytes.AsSpan(0, n).CopyTo(buffer);
+            return n;
+        }
+        throw new MockMismatchException("read", step.GetType().Name);
+    }
+
+    public override void Clear()
+    {
+        if (NextStep() is ClearStep) return;
+        throw new MockMismatchException("clear", "unexpected step");
+    }
+
+    public override void SetReadTimeout(TimeSpan timeout) { }
+
+    public override TransportIdentity Identity => _identity;
+
+    public ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    {
+        Write(data.Span);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(Read(buffer.Span));
+
+    public ValueTask ClearAsync(CancellationToken cancellationToken = default)
+    {
+        Clear();
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask SetReadTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+
+    public ValueTask ReconnectAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+    public ValueTask ConfigureAsync(ConnectOptions opts, CancellationToken cancellationToken = default) =>
+        SetReadTimeoutAsync(opts.ReadTimeout, cancellationToken);
+
+    private static string NormalizeCmd(string s) => s.Trim().ToUpperInvariant();
+}

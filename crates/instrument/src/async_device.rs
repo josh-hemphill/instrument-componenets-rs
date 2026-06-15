@@ -1,4 +1,7 @@
-use crate::classes::{AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator};
+use crate::classes::{
+    AsyncCounter, AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator, AsyncOscilloscope,
+    AsyncSwitch,
+};
 use instrument_core::async_session::AsyncSessionOpener;
 use instrument_core::connect::ConnectOptions;
 use instrument_core::diagnostics::{CommsObserver, DeviceHealth, Diagnostics};
@@ -97,6 +100,33 @@ impl AsyncDeviceRef {
             &self.device.supported_kinds,
         )?;
         Ok(AsyncFunctionGenerator::new(self.open_session().await?))
+    }
+
+    pub async fn open_oscilloscope(&self) -> Result<AsyncOscilloscope> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::Oscilloscope,
+            &self.device.supported_kinds,
+        )?;
+        Ok(AsyncOscilloscope::new(self.open_session().await?))
+    }
+
+    pub async fn open_switch(&self) -> Result<AsyncSwitch> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::Switch,
+            &self.device.supported_kinds,
+        )?;
+        Ok(AsyncSwitch::new(self.open_session().await?))
+    }
+
+    pub async fn open_counter(&self) -> Result<AsyncCounter> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::Counter,
+            &self.device.supported_kinds,
+        )?;
+        Ok(AsyncCounter::new(self.open_session().await?))
     }
 
     pub async fn open_untyped(&self) -> Result<AsyncInstrumentSession> {

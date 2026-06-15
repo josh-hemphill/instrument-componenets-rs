@@ -7,6 +7,9 @@ pub enum InstrumentKind {
     Dmm,
     DcPowerSupply,
     FunctionGenerator,
+    Oscilloscope,
+    Switch,
+    Counter,
     Unknown,
 }
 
@@ -16,6 +19,9 @@ impl InstrumentKind {
             "Dmm" => Some(Self::Dmm),
             "DcPowerSupply" => Some(Self::DcPowerSupply),
             "FunctionGenerator" => Some(Self::FunctionGenerator),
+            "Oscilloscope" => Some(Self::Oscilloscope),
+            "Switch" => Some(Self::Switch),
+            "Counter" => Some(Self::Counter),
             "Unknown" => Some(Self::Unknown),
             _ => None,
         }
@@ -26,6 +32,9 @@ impl InstrumentKind {
             Self::Dmm => "Dmm",
             Self::DcPowerSupply => "DcPowerSupply",
             Self::FunctionGenerator => "FunctionGenerator",
+            Self::Oscilloscope => "Oscilloscope",
+            Self::Switch => "Switch",
+            Self::Counter => "Counter",
             Self::Unknown => "Unknown",
         }
     }

@@ -15,7 +15,7 @@ Consumers typically depend only on `instrument-components` and use `instrument::
 ```mermaid
 flowchart TB
   App[Your application]
-  Typed[Dmm / DcPowerSupply / FunctionGenerator]
+  Typed[Dmm / DcPowerSupply / FunctionGenerator / Oscilloscope / Switch / Counter]
   Catalog[DeviceCatalog / Discovery]
   Session[InstrumentSession / ScpiSession]
   Transport[Transport trait]

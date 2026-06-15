@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/josh-hemphill/instrument-components-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/josh-hemphill/instrument-components-rs/actions/workflows/ci.yml)
 
-High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed classes (DMM, PSU, function generator), and mock fixtures for CI — built on [visa-rs](https://crates.io/crates/visa-rs).
+High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed classes (DMM, PSU, function generator, oscilloscope, switch, counter), and mock fixtures for CI — built on [visa-rs](https://crates.io/crates/visa-rs).
 
 **Install:** `cargo add instrument-components`  
 **Import:** `use instrument::prelude::*` (the library name stays `instrument` even though the package is `instrument-components`)
@@ -10,7 +10,7 @@ High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed
 ## What you get
 
 - Auto-discovery of USB, GPIB, and serial VISA resources
-- Typed instrument classes with SI units (volts, amps, hertz)
+- Typed instrument classes with SI units (volts, amps, hertz, seconds): DMM, DC power supply, function generator, oscilloscope, switch, counter
 - Mock transport for hardware-free CI
 - Per-device comms health and optional push diagnostics
 - Stable `DeviceId` for instrument replacement workflows
@@ -141,6 +141,17 @@ See [docs/async.md](docs/async.md) for hardware async discovery and the full typ
 - [Contributing](CONTRIBUTING.md)
 
 API reference on [docs.rs](https://docs.rs/instrument-components) (after first publish).
+
+## .NET / NuGet
+
+A native C# port lives under [`dotnet/`](dotnet/). Install from NuGet:
+
+```bash
+dotnet add package InstrumentComponents          # mock/CI — no VISA
+dotnet add package InstrumentComponents.Visa     # Windows + IviFoundation.Visa
+```
+
+See [dotnet/README.md](dotnet/README.md) for mock and hardware quick starts.
 
 ## Workspace crates
 

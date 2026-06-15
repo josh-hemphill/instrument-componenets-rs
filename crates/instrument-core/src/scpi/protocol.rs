@@ -32,3 +32,31 @@ pub fn parse_f64(response: &str) -> Result<f64> {
         .parse()
         .map_err(|_| Error::Parse(format!("expected number, got '{response}'")))
 }
+
+/// Parses comma-separated numeric SCPI responses (e.g. waveform ASCII data).
+pub fn parse_f64_csv(response: &str) -> Result<Vec<f64>> {
+    let mut values = Vec::new();
+    for part in response.split(',') {
+        let trimmed = part.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        values.push(
+            trimmed
+                .parse()
+                .map_err(|_| Error::Parse(format!("expected number, got '{trimmed}'")))?,
+        );
+    }
+    Ok(values)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_f64_csv_handles_spaces_and_trailing_comma() {
+        let values = parse_f64_csv(" 1.0, 2.5 ,3.0,").unwrap();
+        assert_eq!(values, vec![1.0, 2.5, 3.0]);
+    }
+}

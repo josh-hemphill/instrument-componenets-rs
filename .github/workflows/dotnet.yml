@@ -1,0 +1,53 @@
+name: .NET
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'dotnet/**'
+      - 'crates/instrument-core/data/model_registry.toml'
+      - 'fixtures/**'
+      - '.github/workflows/dotnet.yml'
+  pull_request:
+    paths:
+      - 'dotnet/**'
+      - 'crates/instrument-core/data/model_registry.toml'
+      - 'fixtures/**'
+      - '.github/workflows/dotnet.yml'
+
+env:
+  DOTNET_NOLOGO: true
+
+jobs:
+  registry-drift:
+    name: Registry drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+      - run: deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
+      - run: git diff --exit-code dotnet/src/InstrumentComponents/Data/model_registry.json
+
+  build-test:
+    name: Build and test (mock)
+    needs: registry-drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet restore dotnet/InstrumentComponents.sln
+      - run: dotnet build dotnet/InstrumentComponents.sln --no-restore -c Release
+      - run: dotnet test dotnet/tests/InstrumentComponents.Tests/InstrumentComponents.Tests.csproj --no-build -c Release
+
+  build-visa:
+    name: Build VISA package (Windows)
+    needs: registry-drift
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet build dotnet/InstrumentComponents.sln -c Release

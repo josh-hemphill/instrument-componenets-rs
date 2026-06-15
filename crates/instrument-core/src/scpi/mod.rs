@@ -6,5 +6,5 @@ mod session;
 
 #[cfg(feature = "async")]
 pub use async_session::AsyncScpiSession;
-pub use protocol::parse_f64;
+pub use protocol::{parse_f64, parse_f64_csv};
 pub use session::ScpiSession;

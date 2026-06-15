@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>InstrumentComponents</RootNamespace>
+    <AssemblyName>InstrumentComponents</AssemblyName>
+    <PackageId>InstrumentComponents</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>josh-hemphill</Authors>
+    <Description>High-level instrument discovery and typed IVI-inspired classes — VISA-agnostic core with mock fixtures for CI.</Description>
+    <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/josh-hemphill/instrument-components-rs</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/josh-hemphill/instrument-components-rs</RepositoryUrl>
+    <PackageTags>visa;scpi;instrument;test-equipment;dmm;ivi</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="InstrumentComponents.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\model_registry.json" LogicalName="InstrumentComponents.Data.model_registry.json" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
