@@ -23,11 +23,41 @@ public sealed class AsyncOscilloscope
     public Task SetChannelScaleAsync(uint channel, double voltsPerDiv, CancellationToken cancellationToken = default) =>
         _session.Scpi.WriteAsync(ScpiCommands.ScopeSetChannelScale(channel, voltsPerDiv), cancellationToken);
 
+    public Task SetChannelDisplayAsync(uint channel, bool enabled, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.ScopeChannelDisplay(channel, enabled ? "ON" : "OFF"), cancellationToken);
+
+    public Task SetChannelCouplingAsync(uint channel, string coupling, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.ScopeChannelCoupling(channel, coupling), cancellationToken);
+
+    public Task SetTriggerSourceAsync(string source, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.ScopeTriggerSource(source), cancellationToken);
+
+    public Task SetTriggerLevelAsync(double volts, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.ScopeTriggerLevel(volts), cancellationToken);
+
+    public Task SetTriggerSlopeAsync(string slope, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.ScopeTriggerSlope(slope), cancellationToken);
+
     public Task RunAsync(CancellationToken cancellationToken = default) =>
         _session.Scpi.WriteAsync(ScpiCommands.ScopeRun, cancellationToken);
 
     public Task StopAsync(CancellationToken cancellationToken = default) =>
         _session.Scpi.WriteAsync(ScpiCommands.ScopeStop, cancellationToken);
+
+    public Task SingleAsync(CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.ScopeSingle, cancellationToken);
+
+    public async Task<double> MeasureVppAsync(uint channel, CancellationToken cancellationToken = default)
+    {
+        var resp = await _session.Scpi.QueryAsync(ScpiCommands.ScopeMeasureVpp(channel), cancellationToken).ConfigureAwait(false);
+        return ScpiSession.ParseF64(resp);
+    }
+
+    public async Task<double> MeasureFrequencyAsync(uint channel, CancellationToken cancellationToken = default)
+    {
+        var resp = await _session.Scpi.QueryAsync(ScpiCommands.ScopeMeasureFrequency(channel), cancellationToken).ConfigureAwait(false);
+        return ScpiSession.ParseF64(resp);
+    }
 
     public async Task<VoltageTrace> CaptureVoltageTraceAsync(uint channel, CancellationToken cancellationToken = default)
     {

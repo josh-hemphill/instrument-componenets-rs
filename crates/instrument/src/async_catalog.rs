@@ -1,7 +1,7 @@
 use crate::async_device::AsyncDeviceRef;
 use crate::classes::{
     AsyncCounter, AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator, AsyncOscilloscope,
-    AsyncSwitch,
+    AsyncPowerMeter, AsyncSpectrumAnalyzer, AsyncSwitch,
 };
 use crate::mock_backend::MockAsyncSessionOpener;
 use instrument_core::address::ResourceAddress;
@@ -187,6 +187,14 @@ impl AsyncDeviceCatalog {
 
     pub async fn open_counter(&self, address: &str) -> Result<AsyncCounter> {
         self.device(address)?.open_counter().await
+    }
+
+    pub async fn open_power_meter(&self, address: &str) -> Result<AsyncPowerMeter> {
+        self.device(address)?.open_power_meter().await
+    }
+
+    pub async fn open_spectrum_analyzer(&self, address: &str) -> Result<AsyncSpectrumAnalyzer> {
+        self.device(address)?.open_spectrum_analyzer().await
     }
 
     pub fn print_summary(&self) {

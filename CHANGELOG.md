@@ -10,12 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Full async API behind `tokio` feature: `AsyncScpiSession`, `AsyncInstrumentSession`, `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`
-- Async typed classes: `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`
+- Async typed classes: `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`, `AsyncPowerMeter`, `AsyncSpectrumAnalyzer`
+- Sync typed classes: `Oscilloscope`, `Switch`, `Counter`, `PowerMeter`, `SpectrumAnalyzer` (in addition to DMM / PSU / FGen)
+- Class depth APIs: DMM AC/Ω/temp + INIT/FETC/READ/*TRG; PSU OVP/sense/channel count; scope trigger/measure; FGen duty/burst; switch path labels; counter gate/channel
+- Dialect profiles + codegen (`tools/gen-dialects.ts`) for vendor SCPI variance including power meter and spectrum analyzer
+- Curated model registry growth (≥40 models across classes) with PowerMeter / SpectrumAnalyzer hints
+- Readonly capability probes for PowerMeter and SpectrumAnalyzer
 - `VisaAsyncTransport` and `VisaAsyncSessionOpener` for async VISA I/O
 - `MockTransport` async impl and `MockAsyncSessionOpener` for CI
 - Shared SCPI protocol helpers (`scpi/protocol.rs`) used by sync and async sessions
-- Examples: `mock_fixture_ci_async`, `discover_async`
+- Shared TOML tables + codegen for SCPI commands and capability probes (Rust + C#)
+- Examples: `mock_fixture_ci_async`, `discover_async`; C# examples under `dotnet/examples/`
 - Async integration tests and CI tokio job coverage
+- Docs: `docs/roadmap.md`, `docs/parity-checklist.md`, `docs/capability-matrix.md`, `docs/dotnet-getting-started.md`, `docs/visa-async-csharp.md`
+
+### Changed
+
+- C# `InstrumentComponents.Visa` targets `net8.0` (Linux-capable builds via `IviFoundation.Visa`; runtime still needs a vendor VISA install)
 
 ## [0.1.0] - 2026-06-06
 
@@ -36,6 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Notes
 
 - Depends on `visa-rs` 0.7.0-alpha.1 (pre-release)
-- Async `ScpiSession` and typed async classes planned for v0.2
+- Async APIs shipped in Unreleased (enable `tokio`); originally noted as planned for a later minor
 
 [0.1.0]: https://github.com/josh-hemphill/instrument-components-rs/releases/tag/v0.1.0

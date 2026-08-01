@@ -1,6 +1,6 @@
 # Async I/O (opt-in)
 
-Enable the `tokio` feature for a **full async API** that mirrors the sync stack: `AsyncScpiSession`, `AsyncDiscovery`, `AsyncDeviceCatalog`, and typed classes (`AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`).
+Enable the `tokio` feature for a **full async API** that mirrors the sync stack: `AsyncScpiSession`, `AsyncDiscovery`, `AsyncDeviceCatalog`, and typed classes (`AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`).
 
 Sync remains the default. Async is additive behind `tokio`.
 
@@ -79,6 +79,11 @@ async fn main() -> Result<()> {
 | `DeviceCatalog` | `AsyncDeviceCatalog` |
 | `DeviceRef` | `AsyncDeviceRef` |
 | `Dmm` | `AsyncDmm` |
+| `DcPowerSupply` | `AsyncDcPowerSupply` |
+| `FunctionGenerator` | `AsyncFunctionGenerator` |
+| `Oscilloscope` | `AsyncOscilloscope` |
+| `Switch` | `AsyncSwitch` |
+| `Counter` | `AsyncCounter` |
 | `VisaTransport` | `VisaAsyncTransport` |
 | `VisaSessionOpener` | `VisaAsyncSessionOpener` |
 

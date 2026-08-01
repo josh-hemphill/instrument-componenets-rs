@@ -1,4 +1,7 @@
-use crate::classes::{Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, Switch};
+use crate::classes::{
+    Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, PowerMeter, SpectrumAnalyzer,
+    Switch,
+};
 use crate::device::DeviceRef;
 use crate::mock_backend::MockSessionOpener;
 use instrument_core::address::ResourceAddress;
@@ -182,6 +185,14 @@ impl DeviceCatalog {
 
     pub fn open_counter(&self, address: &str) -> Result<Counter> {
         self.device(address)?.open_counter()
+    }
+
+    pub fn open_power_meter(&self, address: &str) -> Result<PowerMeter> {
+        self.device(address)?.open_power_meter()
+    }
+
+    pub fn open_spectrum_analyzer(&self, address: &str) -> Result<SpectrumAnalyzer> {
+        self.device(address)?.open_spectrum_analyzer()
     }
 
     pub fn print_summary(&self) {

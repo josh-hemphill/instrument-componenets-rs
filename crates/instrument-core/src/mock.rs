@@ -3,8 +3,8 @@ use crate::error::{Error, Result};
 use crate::identity::Idn;
 use crate::kind::InstrumentKind;
 use crate::transport::{Transport, TransportIdentity};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -174,7 +174,7 @@ fn normalize_cmd(s: &str) -> String {
 pub struct ScriptedFixture {
     idn: Idn,
     kinds: Vec<InstrumentKind>,
-    query_handlers: HashMap<String, String>,
+    query_handlers: IndexMap<String, String>,
     write_handlers: Vec<String>,
 }
 
@@ -232,7 +232,7 @@ impl ScriptedFixture {
 pub struct ScriptedFixtureBuilder {
     idn: Idn,
     kinds: Vec<InstrumentKind>,
-    query_handlers: HashMap<String, String>,
+    query_handlers: IndexMap<String, String>,
     write_handlers: Vec<String>,
 }
 

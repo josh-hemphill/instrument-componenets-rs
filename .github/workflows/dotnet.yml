@@ -2,16 +2,19 @@ name: .NET
 
 on:
   push:
-    branches: [main, master]
+    branches: [latest, main, master]
     paths:
       - 'dotnet/**'
-      - 'crates/instrument-core/data/model_registry.toml'
+      - 'crates/instrument-core/data/**'
+      - 'tools/**'
       - 'fixtures/**'
       - '.github/workflows/dotnet.yml'
   pull_request:
+    branches: [latest, main, master]
     paths:
       - 'dotnet/**'
-      - 'crates/instrument-core/data/model_registry.toml'
+      - 'crates/instrument-core/data/**'
+      - 'tools/**'
       - 'fixtures/**'
       - '.github/workflows/dotnet.yml'
 
@@ -20,13 +23,15 @@ env:
 
 jobs:
   registry-drift:
-    name: Registry drift check
+    name: Shared data drift check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
       - run: deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
-      - run: git diff --exit-code dotnet/src/InstrumentComponents/Data/model_registry.json
+      - run: deno run --allow-read --allow-write tools/gen-shared-tables.ts
+      - run: deno run --allow-read --allow-write tools/gen-dialects.ts
+      - run: git diff --exit-code -- dotnet/src/InstrumentComponents/Data/model_registry.json dotnet/src/InstrumentComponents/Classifier/CapabilityProbes.cs dotnet/src/InstrumentComponents/Classes/ScpiCommands.cs crates/instrument-core/src/classifier/probes.rs crates/instrument-core/src/scpi_commands.rs crates/instrument-core/src/dialect.rs dotnet/src/InstrumentComponents/Dialects/DialectRegistry.cs
 
   build-test:
     name: Build and test (mock)
@@ -41,7 +46,7 @@ jobs:
       - run: dotnet build dotnet/InstrumentComponents.sln --no-restore -c Release
       - run: dotnet test dotnet/tests/InstrumentComponents.Tests/InstrumentComponents.Tests.csproj --no-build -c Release
 
-  build-visa:
+  build-visa-windows:
     name: Build VISA package (Windows)
     needs: registry-drift
     runs-on: windows-latest
@@ -51,3 +56,16 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - run: dotnet build dotnet/InstrumentComponents.sln -c Release
+
+  build-visa-linux:
+    name: Build VISA package (Linux)
+    needs: registry-drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet build dotnet/src/InstrumentComponents.Visa/InstrumentComponents.Visa.csproj -c Release
+      - run: dotnet run --project dotnet/examples/MockFixtureCi/MockFixtureCi.csproj -c Release
+      - run: dotnet run --project dotnet/examples/MockFixtureCiAsync/MockFixtureCiAsync.csproj -c Release

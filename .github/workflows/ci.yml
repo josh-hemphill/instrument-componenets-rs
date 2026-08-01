@@ -29,6 +29,10 @@ jobs:
       # instrument-visa links libvisa unconditionally; runners have no VISA.
       # It is compile-checked by the cross-compile and tokio jobs instead.
       - run: cargo test --workspace --exclude instrument-visa --no-default-features
+      - uses: denoland/setup-deno@v2
+      - run: deno run --allow-read --allow-write tools/gen-shared-tables.ts
+      - run: deno run --allow-read --allow-write tools/gen-dialects.ts
+      - run: git diff --exit-code -- crates/instrument-core/src/classifier/probes.rs crates/instrument-core/src/scpi_commands.rs crates/instrument-core/src/dialect.rs dotnet/src/InstrumentComponents/Classifier/CapabilityProbes.cs dotnet/src/InstrumentComponents/Classes/ScpiCommands.cs dotnet/src/InstrumentComponents/Dialects/DialectRegistry.cs
       - run: cargo doc --no-deps --workspace --no-default-features
         env:
           RUSTDOCFLAGS: -D warnings

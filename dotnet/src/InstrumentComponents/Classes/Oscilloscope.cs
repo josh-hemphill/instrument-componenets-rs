@@ -21,9 +21,32 @@ public sealed class Oscilloscope
     public void SetChannelScale(uint channel, double voltsPerDiv) =>
         _session.Scpi.Write(ScpiCommands.ScopeSetChannelScale(channel, voltsPerDiv));
 
+    public void SetChannelDisplay(uint channel, bool enabled) =>
+        _session.Scpi.Write(ScpiCommands.ScopeChannelDisplay(channel, enabled ? "ON" : "OFF"));
+
+    public void SetChannelCoupling(uint channel, string coupling) =>
+        _session.Scpi.Write(ScpiCommands.ScopeChannelCoupling(channel, coupling));
+
+    public void SetTriggerSource(string source) =>
+        _session.Scpi.Write(ScpiCommands.ScopeTriggerSource(source));
+
+    public void SetTriggerLevel(double volts) =>
+        _session.Scpi.Write(ScpiCommands.ScopeTriggerLevel(volts));
+
+    public void SetTriggerSlope(string slope) =>
+        _session.Scpi.Write(ScpiCommands.ScopeTriggerSlope(slope));
+
     public void Run() => _session.Scpi.Write(ScpiCommands.ScopeRun);
 
     public void Stop() => _session.Scpi.Write(ScpiCommands.ScopeStop);
+
+    public void Single() => _session.Scpi.Write(ScpiCommands.ScopeSingle);
+
+    public double MeasureVpp(uint channel) =>
+        ScpiSession.ParseF64(_session.Scpi.Query(ScpiCommands.ScopeMeasureVpp(channel)));
+
+    public double MeasureFrequency(uint channel) =>
+        ScpiSession.ParseF64(_session.Scpi.Query(ScpiCommands.ScopeMeasureFrequency(channel)));
 
     public VoltageTrace CaptureVoltageTrace(uint channel)
     {

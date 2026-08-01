@@ -1,7 +1,11 @@
 use instrument_core::error::{Error, Result};
+use instrument_core::scpi_commands;
 use instrument_core::InstrumentSession;
 
 /// Switch / matrix session view (IVI-inspired / SCPI :ROUTe).
+///
+/// Path model: routes are matrix channel pairs `(ch1, ch2)`. Use [`path_label`]
+/// for a stable human-readable name; IVI "ClosePath" maps to [`close_route`].
 pub struct Switch {
     session: InstrumentSession,
 }
@@ -19,18 +23,25 @@ impl Switch {
         &mut self.session
     }
 
-    /// Closes a route between two channels (1-based).
+    /// Formats a matrix path label for channels `ch1` and `ch2` (1-based).
+    ///
+    /// Equivalent naming to IVI `ClosePath` / `OpenPath` path strings.
+    pub fn path_label(ch1: u32, ch2: u32) -> String {
+        format!("(@({ch1},{ch2}))")
+    }
+
+    /// Closes a route between two channels (1-based). IVI ClosePath equivalent.
     pub fn close_route(&mut self, ch1: u32, ch2: u32) -> Result<()> {
         self.session
             .scpi_mut()
-            .write(&format!(":ROUTe:CLOS (@({ch1},{ch2}))"))
+            .write(&scpi_commands::switch_close_route(ch1, ch2))
     }
 
-    /// Opens a route between two channels (1-based).
+    /// Opens a route between two channels (1-based). IVI OpenPath equivalent.
     pub fn open_route(&mut self, ch1: u32, ch2: u32) -> Result<()> {
         self.session
             .scpi_mut()
-            .write(&format!(":ROUTe:OPEN (@({ch1},{ch2}))"))
+            .write(&scpi_commands::switch_open_route(ch1, ch2))
     }
 
     /// Returns whether a route is closed.
@@ -38,13 +49,15 @@ impl Switch {
         let resp = self
             .session
             .scpi_mut()
-            .query(&format!(":ROUTe:CLOS? (@({ch1},{ch2}))"))?;
+            .query(&scpi_commands::switch_is_closed(ch1, ch2))?;
         parse_closed(&resp)
     }
 
     /// Opens all routes.
     pub fn open_all(&mut self) -> Result<()> {
-        self.session.scpi_mut().write(":ROUTe:OPEN:ALL")
+        self.session
+            .scpi_mut()
+            .write(scpi_commands::SWITCH_OPEN_ALL)
     }
 }
 

@@ -18,6 +18,12 @@ public sealed class Counter
     public double MeasurePeriod() =>
         QueryF64(ScpiCommands.CounterMeasurePeriod);
 
+    public void SetGateTime(double seconds) =>
+        _session.Scpi.Write(ScpiCommands.CounterGateTime(seconds));
+
+    public void SelectChannel(uint channel) =>
+        _session.Scpi.Write(ScpiCommands.CounterChannelSelect(channel));
+
     public void ResetTotalize() =>
         _session.Scpi.Write(ScpiCommands.CounterResetTotalize);
 

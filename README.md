@@ -131,6 +131,8 @@ See [docs/async.md](docs/async.md) for hardware async discovery and the full typ
 
 ## Documentation
 
+Published site (MkDocs): [https://josh-hemphill.github.io/instrument-components-rs/](https://josh-hemphill.github.io/instrument-components-rs/)
+
 - [Getting started](docs/getting-started.md) — step-by-step setup
 - [Architecture](docs/architecture.md) — crate layout and mental model
 - [Discovery](docs/discovery.md) — probe policy, device assignment
@@ -138,9 +140,12 @@ See [docs/async.md](docs/async.md) for hardware async discovery and the full typ
 - [Async I/O](docs/async.md) — tokio feature and async API
 - [API overview](docs/api-overview.md) — main types reference
 - [Examples](docs/examples.md) — runnable examples index
+- [Roadmap](docs/roadmap.md) — parity / C# competitiveness phases
+- [Parity checklist](docs/parity-checklist.md) — Rust ↔ C# scenario matrix
+- [.NET getting started](docs/dotnet-getting-started.md) — C# port quick start
 - [Contributing](CONTRIBUTING.md)
 
-API reference on [docs.rs](https://docs.rs/instrument-components) (after first publish).
+API reference on [docs.rs](https://docs.rs/instrument-components) (after first publish). Local docs site: `docs-site/` (`pip install -r requirements.txt && mkdocs serve`).
 
 ## .NET / NuGet
 

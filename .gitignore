@@ -2,3 +2,4 @@
 **/*.rs.bk
 **/bin/
 **/obj/
+docs-site/site/

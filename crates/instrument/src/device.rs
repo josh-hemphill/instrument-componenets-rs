@@ -1,4 +1,7 @@
-use crate::classes::{Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, Switch};
+use crate::classes::{
+    Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, PowerMeter, SpectrumAnalyzer,
+    Switch,
+};
 use instrument_core::connect::ConnectOptions;
 use instrument_core::diagnostics::{CommsObserver, DeviceHealth, Diagnostics};
 use instrument_core::error::Result;
@@ -123,6 +126,24 @@ impl DeviceRef {
             &self.device.supported_kinds,
         )?;
         Ok(Counter::new(self.open_session()?))
+    }
+
+    pub fn open_power_meter(&self) -> Result<PowerMeter> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::PowerMeter,
+            &self.device.supported_kinds,
+        )?;
+        Ok(PowerMeter::new(self.open_session()?))
+    }
+
+    pub fn open_spectrum_analyzer(&self) -> Result<SpectrumAnalyzer> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::SpectrumAnalyzer,
+            &self.device.supported_kinds,
+        )?;
+        Ok(SpectrumAnalyzer::new(self.open_session()?))
     }
 
     pub fn open_untyped(&self) -> Result<InstrumentSession> {

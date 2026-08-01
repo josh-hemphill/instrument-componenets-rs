@@ -1,0 +1,6 @@
+{
+  "steps": [
+    { "op": "write", "data": ":ROUTe:CLOS? (@(1,2))\n" },
+    { "op": "read", "data": "1\n" }
+  ]
+}

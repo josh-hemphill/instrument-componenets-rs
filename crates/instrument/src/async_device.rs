@@ -1,6 +1,6 @@
 use crate::classes::{
     AsyncCounter, AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator, AsyncOscilloscope,
-    AsyncSwitch,
+    AsyncPowerMeter, AsyncSpectrumAnalyzer, AsyncSwitch,
 };
 use instrument_core::async_session::AsyncSessionOpener;
 use instrument_core::connect::ConnectOptions;
@@ -127,6 +127,24 @@ impl AsyncDeviceRef {
             &self.device.supported_kinds,
         )?;
         Ok(AsyncCounter::new(self.open_session().await?))
+    }
+
+    pub async fn open_power_meter(&self) -> Result<AsyncPowerMeter> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::PowerMeter,
+            &self.device.supported_kinds,
+        )?;
+        Ok(AsyncPowerMeter::new(self.open_session().await?))
+    }
+
+    pub async fn open_spectrum_analyzer(&self) -> Result<AsyncSpectrumAnalyzer> {
+        ensure_kind_supported(
+            &self.device.address,
+            InstrumentKind::SpectrumAnalyzer,
+            &self.device.supported_kinds,
+        )?;
+        Ok(AsyncSpectrumAnalyzer::new(self.open_session().await?))
     }
 
     pub async fn open_untyped(&self) -> Result<AsyncInstrumentSession> {

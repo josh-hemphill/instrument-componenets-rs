@@ -48,8 +48,23 @@ public sealed class FunctionGenerator
     public void SetOffset(double volts) =>
         _session.Scpi.Write(ScpiCommands.FgenSetOffset(volts));
 
+    public void SetDutyCycle(double percent) =>
+        _session.Scpi.Write(ScpiCommands.FgenSetDutyCycle(percent));
+
+    public void SetLoad(double ohms) =>
+        _session.Scpi.Write(ScpiCommands.FgenSetLoad(ohms));
+
     public void OutputEnable(bool enabled) =>
         _session.Scpi.Write(ScpiCommands.FgenOutputEnable(enabled));
+
+    public void SetBurstCount(uint count) =>
+        _session.Scpi.Write(ScpiCommands.FgenBurstCount(count));
+
+    public void SetBurstState(bool enabled) =>
+        _session.Scpi.Write(ScpiCommands.FgenBurstState(enabled ? "ON" : "OFF"));
+
+    public void SetBurstTriggerSource(string source) =>
+        _session.Scpi.Write(ScpiCommands.FgenBurstTrigger(source));
 
     public double ReadFrequency() =>
         ScpiSession.ParseF64(_session.Scpi.Query(ScpiCommands.FgenReadFrequency));

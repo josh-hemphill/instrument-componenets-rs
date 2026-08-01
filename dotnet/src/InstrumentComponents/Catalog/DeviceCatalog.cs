@@ -138,6 +138,8 @@ public sealed class DeviceCatalog
     public Oscilloscope OpenOscilloscope(string address) => Device(address).OpenOscilloscope();
     public Switch OpenSwitch(string address) => Device(address).OpenSwitch();
     public Counter OpenCounter(string address) => Device(address).OpenCounter();
+    public PowerMeter OpenPowerMeter(string address) => Device(address).OpenPowerMeter();
+    public SpectrumAnalyzer OpenSpectrumAnalyzer(string address) => Device(address).OpenSpectrumAnalyzer();
 
     public void PrintSummary()
     {

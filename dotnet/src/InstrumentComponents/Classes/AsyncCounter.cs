@@ -17,6 +17,12 @@ public sealed class AsyncCounter
     public Task<double> MeasurePeriodAsync(CancellationToken cancellationToken = default) =>
         QueryF64Async(ScpiCommands.CounterMeasurePeriod, cancellationToken);
 
+    public Task SetGateTimeAsync(double seconds, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.CounterGateTime(seconds), cancellationToken);
+
+    public Task SelectChannelAsync(uint channel, CancellationToken cancellationToken = default) =>
+        _session.Scpi.WriteAsync(ScpiCommands.CounterChannelSelect(channel), cancellationToken);
+
     public Task ResetTotalizeAsync(CancellationToken cancellationToken = default) =>
         _session.Scpi.WriteAsync(ScpiCommands.CounterResetTotalize, cancellationToken);
 

@@ -19,6 +19,15 @@ cargo run -p instrument-components --features visa --example assign_instruments
 cargo run -p instrument-components --features visa,tokio --example discover_async
 ```
 
+## .NET examples
+
+```bash
+dotnet run --project dotnet/examples/MockFixtureCi
+dotnet run --project dotnet/examples/MockFixtureCiAsync
+dotnet run --project dotnet/examples/Discover          # needs VISA
+dotnet run --project dotnet/examples/AssignInstruments # needs VISA
+```
+
 | Example | What it demonstrates |
 |---|---|
 | `mock_fixture_ci` | Scripted fixture for CI pipelines |
@@ -28,3 +37,7 @@ cargo run -p instrument-components --features visa,tokio --example discover_asyn
 | `dmm_measure` | Open a DMM and measure DC voltage |
 | `manual_tcpip` | Manual TCPIP address + discovery |
 | `assign_instruments` | List DMMs by `DeviceId` for app assignment |
+| `dotnet/.../MockFixtureCi` | C# mock CI fixture |
+| `dotnet/.../MockFixtureCiAsync` | C# async mock |
+| `dotnet/.../Discover` | C# VISA discover |
+| `dotnet/.../AssignInstruments` | C# device-id assignment |

@@ -4,14 +4,27 @@ namespace InstrumentComponents.Tests;
 
 public class TranscriptConformanceTests
 {
-    [Fact]
-    public void LoadsSharedRustFixture()
+    private static string FixturePath(string name) => Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "fixtures", name));
+
+    [Theory]
+    [InlineData("smu2602.json", 2)]
+    [InlineData("scope_ds1054z.json", 7)]
+    [InlineData("switch_34970a.json", 2)]
+    [InlineData("counter_53230a.json", 2)]
+    public void LoadsSharedFixture(string fileName, int expectedSteps)
     {
-        var path = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "fixtures", "smu2602.json"));
-        var json = File.ReadAllText(path);
+        var json = File.ReadAllText(FixturePath(fileName));
         var transcript = Transcript.FromJson(json);
-        Assert.Equal(2, transcript.Steps.Count);
+        Assert.Equal(expectedSteps, transcript.Steps.Count);
+        _ = new MockTransport(transcript.Steps);
+    }
+
+    [Fact]
+    public void Smu2602QueryRoundTrip()
+    {
+        var json = File.ReadAllText(FixturePath("smu2602.json"));
+        var transcript = Transcript.FromJson(json);
         var transport = new MockTransport(transcript.Steps);
         var session = new Scpi.ScpiSession(transport, new Connect.ConnectOptions());
         var volts = session.Query(":MEAS:VOLT:DC?");

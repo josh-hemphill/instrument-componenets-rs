@@ -1,6 +1,7 @@
 pub use crate::catalog::DeviceCatalog;
 pub use crate::classes::{
-    Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, Switch, VoltageTrace,
+    Counter, DcPowerSupply, Dmm, FunctionGenerator, Oscilloscope, PowerMeter, PowerUnit,
+    SpectrumAnalyzer, Switch, VoltageTrace, Waveform,
 };
 pub use crate::device::DeviceRef;
 pub use crate::discovery::Discovery;
@@ -20,7 +21,7 @@ pub use crate::async_discovery::AsyncDiscovery;
 #[cfg(feature = "tokio")]
 pub use crate::classes::{
     AsyncCounter, AsyncDcPowerSupply, AsyncDmm, AsyncFunctionGenerator, AsyncOscilloscope,
-    AsyncSwitch,
+    AsyncPowerMeter, AsyncSpectrumAnalyzer, AsyncSwitch,
 };
 
 #[cfg(feature = "tokio")]

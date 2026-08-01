@@ -9,6 +9,8 @@ public enum InstrumentKind
     Oscilloscope,
     Switch,
     Counter,
+    PowerMeter,
+    SpectrumAnalyzer,
     Unknown,
 }
 
@@ -22,6 +24,8 @@ public static class InstrumentKindExtensions
         "Oscilloscope" => InstrumentKind.Oscilloscope,
         "Switch" => InstrumentKind.Switch,
         "Counter" => InstrumentKind.Counter,
+        "PowerMeter" => InstrumentKind.PowerMeter,
+        "SpectrumAnalyzer" => InstrumentKind.SpectrumAnalyzer,
         "Unknown" => InstrumentKind.Unknown,
         _ => null,
     };
@@ -34,6 +38,8 @@ public static class InstrumentKindExtensions
         InstrumentKind.Oscilloscope => "Oscilloscope",
         InstrumentKind.Switch => "Switch",
         InstrumentKind.Counter => "Counter",
+        InstrumentKind.PowerMeter => "PowerMeter",
+        InstrumentKind.SpectrumAnalyzer => "SpectrumAnalyzer",
         InstrumentKind.Unknown => "Unknown",
         _ => "Unknown",
     };

@@ -3,7 +3,10 @@ using InstrumentComponents.Transport;
 
 namespace InstrumentComponents.Visa;
 
-/// <summary>VISA transport exposed as async via sync bridge (VISA.NET APM varies by vendor).</summary>
+/// <summary>
+/// VISA transport exposed as async via sync bridge (thread-pool offload).
+/// Not vendor APM — see docs/visa-async-csharp.md. Cancellation does not abort in-flight native VISA calls.
+/// </summary>
 public sealed class VisaAsyncTransport : IAsyncTransport
 {
     private readonly SyncAsAsyncTransport<VisaTransport> _inner;

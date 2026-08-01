@@ -64,7 +64,9 @@ pub mod classes {
     pub mod dc_psu;
     pub mod dmm;
     pub mod fgen;
+    pub mod power_meter;
     pub mod scope;
+    pub mod spectrum_analyzer;
     pub mod switch;
 
     #[cfg(feature = "tokio")]
@@ -76,15 +78,21 @@ pub mod classes {
     #[cfg(feature = "tokio")]
     pub mod async_fgen;
     #[cfg(feature = "tokio")]
+    pub mod async_power_meter;
+    #[cfg(feature = "tokio")]
     pub mod async_scope;
+    #[cfg(feature = "tokio")]
+    pub mod async_spectrum_analyzer;
     #[cfg(feature = "tokio")]
     pub mod async_switch;
 
     pub use counter::Counter;
     pub use dc_psu::DcPowerSupply;
     pub use dmm::Dmm;
-    pub use fgen::FunctionGenerator;
+    pub use fgen::{FunctionGenerator, Waveform};
+    pub use power_meter::{PowerMeter, PowerUnit};
     pub use scope::{Oscilloscope, VoltageTrace};
+    pub use spectrum_analyzer::SpectrumAnalyzer;
     pub use switch::Switch;
 
     #[cfg(feature = "tokio")]
@@ -96,7 +104,11 @@ pub mod classes {
     #[cfg(feature = "tokio")]
     pub use async_fgen::AsyncFunctionGenerator;
     #[cfg(feature = "tokio")]
+    pub use async_power_meter::AsyncPowerMeter;
+    #[cfg(feature = "tokio")]
     pub use async_scope::AsyncOscilloscope;
+    #[cfg(feature = "tokio")]
+    pub use async_spectrum_analyzer::AsyncSpectrumAnalyzer;
     #[cfg(feature = "tokio")]
     pub use async_switch::AsyncSwitch;
 }

@@ -84,6 +84,7 @@ dependencies = [
 name = "instrument-core"
 version = "0.1.0"
 dependencies = [
+ "indexmap",
  "serde",
  "serde_json",
  "thiserror",

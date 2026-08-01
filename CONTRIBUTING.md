@@ -57,7 +57,23 @@ model = "34401A"
 kinds = ["Dmm"]
 ```
 
+Then regenerate the C# embed:
+
+```bash
+deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
+```
+
 Registry entries are **hints only** — capability probes and `*IDN?` can override.
+
+## Shared SCPI / probe tables
+
+Edit TOML under `crates/instrument-core/data/`, then:
+
+```bash
+deno run --allow-read --allow-write tools/gen-shared-tables.ts
+```
+
+This regenerates Rust `probes.rs` / `scpi_commands.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs`. CI fails on drift.
 
 ## Pull requests
 

@@ -110,6 +110,10 @@ public static class Classifier
             kinds.Add(new ClassifiedKind(InstrumentKind.Switch, 85, ClassifySource.CapabilityProbe));
         if (CapabilityProbes.ProbeAny(session, CapabilityProbes.CounterReadonlyCommands, CapabilityProbes.ProbeTimeout))
             kinds.Add(new ClassifiedKind(InstrumentKind.Counter, 85, ClassifySource.CapabilityProbe));
+        if (CapabilityProbes.ProbeAny(session, CapabilityProbes.PwrmeterReadonlyCommands, CapabilityProbes.ProbeTimeout))
+            kinds.Add(new ClassifiedKind(InstrumentKind.PowerMeter, 85, ClassifySource.CapabilityProbe));
+        if (CapabilityProbes.ProbeAny(session, CapabilityProbes.SpecanReadonlyCommands, CapabilityProbes.ProbeTimeout))
+            kinds.Add(new ClassifiedKind(InstrumentKind.SpectrumAnalyzer, 85, ClassifySource.CapabilityProbe));
         return kinds;
     }
 
@@ -136,6 +140,10 @@ public static class Classifier
             kinds.Add(new ClassifiedKind(InstrumentKind.Switch, 85, ClassifySource.CapabilityProbe));
         if (await CapabilityProbes.ProbeAnyAsync(session, CapabilityProbes.CounterReadonlyCommands, CapabilityProbes.ProbeTimeout, cancellationToken).ConfigureAwait(false))
             kinds.Add(new ClassifiedKind(InstrumentKind.Counter, 85, ClassifySource.CapabilityProbe));
+        if (await CapabilityProbes.ProbeAnyAsync(session, CapabilityProbes.PwrmeterReadonlyCommands, CapabilityProbes.ProbeTimeout, cancellationToken).ConfigureAwait(false))
+            kinds.Add(new ClassifiedKind(InstrumentKind.PowerMeter, 85, ClassifySource.CapabilityProbe));
+        if (await CapabilityProbes.ProbeAnyAsync(session, CapabilityProbes.SpecanReadonlyCommands, CapabilityProbes.ProbeTimeout, cancellationToken).ConfigureAwait(false))
+            kinds.Add(new ClassifiedKind(InstrumentKind.SpectrumAnalyzer, 85, ClassifySource.CapabilityProbe));
         return kinds;
     }
 

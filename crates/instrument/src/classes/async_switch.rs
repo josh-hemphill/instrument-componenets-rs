@@ -1,8 +1,12 @@
 use crate::classes::switch::parse_closed;
 use instrument_core::error::Result;
+use instrument_core::scpi_commands;
 use instrument_core::AsyncInstrumentSession;
 
 /// Async switch / matrix session view (IVI-inspired / SCPI :ROUTe).
+///
+/// Path model: routes are matrix channel pairs `(ch1, ch2)`. Use [`Switch::path_label`]
+/// for a stable human-readable name; IVI "ClosePath" maps to [`close_route`].
 pub struct AsyncSwitch {
     session: AsyncInstrumentSession,
 }
@@ -20,11 +24,16 @@ impl AsyncSwitch {
         &mut self.session
     }
 
-    /// Closes a route between two channels (1-based).
+    /// Formats a matrix path label for channels `ch1` and `ch2` (1-based).
+    pub fn path_label(ch1: u32, ch2: u32) -> String {
+        crate::classes::Switch::path_label(ch1, ch2)
+    }
+
+    /// Closes a route between two channels (1-based). IVI ClosePath equivalent.
     pub async fn close_route(&mut self, ch1: u32, ch2: u32) -> Result<()> {
         self.session
             .scpi_mut()
-            .write(&format!(":ROUTe:CLOS (@({ch1},{ch2}))"))
+            .write(&scpi_commands::switch_close_route(ch1, ch2))
             .await
     }
 
@@ -32,7 +41,7 @@ impl AsyncSwitch {
     pub async fn open_route(&mut self, ch1: u32, ch2: u32) -> Result<()> {
         self.session
             .scpi_mut()
-            .write(&format!(":ROUTe:OPEN (@({ch1},{ch2}))"))
+            .write(&scpi_commands::switch_open_route(ch1, ch2))
             .await
     }
 
@@ -41,13 +50,16 @@ impl AsyncSwitch {
         let resp = self
             .session
             .scpi_mut()
-            .query(&format!(":ROUTe:CLOS? (@({ch1},{ch2}))"))
+            .query(&scpi_commands::switch_is_closed(ch1, ch2))
             .await?;
         parse_closed(&resp)
     }
 
     /// Opens all routes.
     pub async fn open_all(&mut self) -> Result<()> {
-        self.session.scpi_mut().write(":ROUTe:OPEN:ALL").await
+        self.session
+            .scpi_mut()
+            .write(scpi_commands::SWITCH_OPEN_ALL)
+            .await
     }
 }

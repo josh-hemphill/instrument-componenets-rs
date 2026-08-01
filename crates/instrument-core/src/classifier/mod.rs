@@ -11,8 +11,8 @@ use crate::scpi::ScpiSession;
 use crate::transport::TransportIdentity;
 use probes::{
     probe_any, COUNTER_READONLY_COMMANDS, DMM_ACQUISITION_COMMANDS, DMM_READONLY_COMMANDS,
-    FGEN_READONLY_COMMANDS, PROBE_TIMEOUT, PSU_READONLY_COMMANDS, SCOPE_READONLY_COMMANDS,
-    SWITCH_READONLY_COMMANDS,
+    FGEN_READONLY_COMMANDS, PROBE_TIMEOUT, PSU_READONLY_COMMANDS, PWRMETER_READONLY_COMMANDS,
+    SCOPE_READONLY_COMMANDS, SPECAN_READONLY_COMMANDS, SWITCH_READONLY_COMMANDS,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -232,6 +232,22 @@ fn classify_readonly_probes(session: &mut ScpiSession) -> Vec<ClassifiedKind> {
         });
     }
 
+    if probe_any(session, PWRMETER_READONLY_COMMANDS, PROBE_TIMEOUT) {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::PowerMeter,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any(session, SPECAN_READONLY_COMMANDS, PROBE_TIMEOUT) {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::SpectrumAnalyzer,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
     kinds
 }
 
@@ -319,6 +335,22 @@ async fn classify_readonly_probes_async(session: &mut AsyncScpiSession) -> Vec<C
     if probe_any_async(session, COUNTER_READONLY_COMMANDS, PROBE_TIMEOUT).await {
         kinds.push(ClassifiedKind {
             kind: InstrumentKind::Counter,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any_async(session, PWRMETER_READONLY_COMMANDS, PROBE_TIMEOUT).await {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::PowerMeter,
+            confidence: 85,
+            source: ClassifySource::CapabilityProbe,
+        });
+    }
+
+    if probe_any_async(session, SPECAN_READONLY_COMMANDS, PROBE_TIMEOUT).await {
+        kinds.push(ClassifiedKind {
+            kind: InstrumentKind::SpectrumAnalyzer,
             confidence: 85,
             source: ClassifySource::CapabilityProbe,
         });

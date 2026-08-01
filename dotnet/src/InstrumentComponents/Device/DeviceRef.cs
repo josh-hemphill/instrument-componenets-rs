@@ -114,6 +114,18 @@ public sealed class DeviceRef
         return new Counter(OpenSession());
     }
 
+    public PowerMeter OpenPowerMeter()
+    {
+        SessionHelpers.EnsureKindSupported(_device.Address, InstrumentKind.PowerMeter, _device.SupportedKinds);
+        return new PowerMeter(OpenSession());
+    }
+
+    public SpectrumAnalyzer OpenSpectrumAnalyzer()
+    {
+        SessionHelpers.EnsureKindSupported(_device.Address, InstrumentKind.SpectrumAnalyzer, _device.SupportedKinds);
+        return new SpectrumAnalyzer(OpenSession());
+    }
+
     public async Task<AsyncInstrumentSession> OpenSessionAsync(CancellationToken cancellationToken = default)
     {
         if (_asyncOpener is null)
@@ -164,5 +176,17 @@ public sealed class DeviceRef
     {
         SessionHelpers.EnsureKindSupported(_device.Address, InstrumentKind.Counter, _device.SupportedKinds);
         return new AsyncCounter(await OpenSessionAsync(cancellationToken).ConfigureAwait(false));
+    }
+
+    public async Task<AsyncPowerMeter> OpenPowerMeterAsync(CancellationToken cancellationToken = default)
+    {
+        SessionHelpers.EnsureKindSupported(_device.Address, InstrumentKind.PowerMeter, _device.SupportedKinds);
+        return new AsyncPowerMeter(await OpenSessionAsync(cancellationToken).ConfigureAwait(false));
+    }
+
+    public async Task<AsyncSpectrumAnalyzer> OpenSpectrumAnalyzerAsync(CancellationToken cancellationToken = default)
+    {
+        SessionHelpers.EnsureKindSupported(_device.Address, InstrumentKind.SpectrumAnalyzer, _device.SupportedKinds);
+        return new AsyncSpectrumAnalyzer(await OpenSessionAsync(cancellationToken).ConfigureAwait(false));
     }
 }

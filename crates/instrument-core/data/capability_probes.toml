@@ -1,0 +1,31 @@
+# Capability probe command lists — single source for Rust + C# codegen.
+# Regenerate: deno run --allow-read --allow-write tools/gen-shared-tables.ts
+
+probe_timeout_ms = 800
+
+[readonly.dmm]
+commands = [":SENS:FUNC?", "SENS:FUNC?", ":FUNC?", "FUNC?"]
+
+[readonly.psu]
+commands = [":OUTP? 1", "OUTP? 1", ":OUTP?", "OUTP?"]
+
+[readonly.fgen]
+commands = [":SOUR:FUNC?", "SOUR:FUNC?"]
+
+[readonly.scope]
+commands = [":TIMebase:SCALe?", "TIMebase:SCALe?", ":CHAN1:SCALe?", "CHAN1:SCALe?", ":WAVeform:SOURce?", "WAVeform:SOURce?"]
+
+[readonly.switch]
+commands = [":ROUTe:CLOS?", "ROUT:CLOS?", ":ROUTe:CAT?", "ROUT:CAT?"]
+
+[readonly.counter]
+commands = [":COUNter:DATA?", "COUN:DATA?", ":COUNter:A:DATA?", "COUN:A:DATA?"]
+
+[readonly.pwrmeter]
+commands = [":UNIT:POW?", "UNIT:POW?", ":SENS:POW:RANG:AUTO?", "SENS:POW:RANG:AUTO?"]
+
+[readonly.specan]
+commands = [":FREQ:CENT?", "FREQ:CENT?", ":FREQ:SPAN?", "FREQ:SPAN?", ":BAND?", "BAND?"]
+
+[acquisition.dmm]
+commands = [":MEAS:VOLT:DC?", "MEAS:VOLT:DC?"]

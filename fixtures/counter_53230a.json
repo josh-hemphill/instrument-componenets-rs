@@ -1,0 +1,6 @@
+{
+  "steps": [
+    { "op": "write", "data": ":MEASure:FREQuency?\n" },
+    { "op": "read", "data": "1000.0\n" }
+  ]
+}

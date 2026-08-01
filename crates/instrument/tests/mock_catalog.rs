@@ -15,6 +15,58 @@ fn fixture_dmm_measure() {
 }
 
 #[test]
+fn fixture_dmm_depth() {
+    // ScriptedFixture emits all on_write steps before on_query steps.
+    let fixture = ScriptedFixture::builder()
+        .idn("Keysight Technologies", "34461A", "SN1", "1.0")
+        .kinds([InstrumentKind::Dmm])
+        .on_write(":CONF:VOLT:AC")
+        .on_write("INIT")
+        .on_write("*TRG")
+        .on_query(":MEAS:CURR:AC?", "0.012")
+        .on_query(":MEAS:RES?", "1000.0")
+        .on_query(":MEAS:FRES?", "999.5")
+        .on_query(":MEAS:TEMP?", "25.0")
+        .on_query("FETC?", "1.234")
+        .on_query("READ?", "2.345")
+        .build();
+
+    let catalog = DeviceCatalog::from_fixture("mock://dmm-depth", fixture).unwrap();
+    let mut dmm = catalog.open_dmm("mock://dmm-depth").unwrap();
+    dmm.configure_voltage_ac(None, None).unwrap();
+    dmm.initiate().unwrap();
+    dmm.software_trigger().unwrap();
+    assert!((dmm.measure_current_ac(None).unwrap() - 0.012).abs() < 1e-9);
+    assert!((dmm.measure_resistance_2wire(None).unwrap() - 1000.0).abs() < 1e-9);
+    assert!((dmm.measure_resistance_4wire(None).unwrap() - 999.5).abs() < 1e-9);
+    assert!((dmm.measure_temperature(None).unwrap() - 25.0).abs() < 1e-9);
+    assert!((dmm.fetch().unwrap() - 1.234).abs() < 1e-9);
+    assert!((dmm.read().unwrap() - 2.345).abs() < 1e-9);
+}
+
+#[test]
+fn fixture_psu_depth() {
+    let fixture = ScriptedFixture::builder()
+        .idn("Keysight Technologies", "E36312A", "SN1", "1.0")
+        .kinds([InstrumentKind::DcPowerSupply])
+        .on_write(":SOUR1:VOLT:PROT 5.5")
+        .on_write(":SOUR1:VOLT:PROT:STAT ON")
+        .on_write(":OUTP1:SENS ON")
+        .on_query(":OUTP1?", "1")
+        .on_query(":SOUR1:VOLT:PROT:STAT?", "ON")
+        .build();
+
+    let catalog = DeviceCatalog::from_fixture("mock://psu-depth", fixture).unwrap();
+    let mut psu = catalog.open_dc_power_supply("mock://psu-depth").unwrap();
+    assert_eq!(psu.channel_count(), 1);
+    psu.ovp_level(1, 5.5).unwrap();
+    psu.ovp_enable(1, true).unwrap();
+    psu.sense_enable(1, true).unwrap();
+    assert!(psu.output_state_query(1).unwrap());
+    assert!(psu.ovp_query(1).unwrap());
+}
+
+#[test]
 fn multi_session_same_device() {
     let fixture = ScriptedFixture::builder()
         .idn("Acme", "PSU", "1", "1.0")

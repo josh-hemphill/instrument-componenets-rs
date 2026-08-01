@@ -10,6 +10,8 @@ pub enum InstrumentKind {
     Oscilloscope,
     Switch,
     Counter,
+    PowerMeter,
+    SpectrumAnalyzer,
     Unknown,
 }
 
@@ -22,6 +24,8 @@ impl InstrumentKind {
             "Oscilloscope" => Some(Self::Oscilloscope),
             "Switch" => Some(Self::Switch),
             "Counter" => Some(Self::Counter),
+            "PowerMeter" => Some(Self::PowerMeter),
+            "SpectrumAnalyzer" => Some(Self::SpectrumAnalyzer),
             "Unknown" => Some(Self::Unknown),
             _ => None,
         }
@@ -35,6 +39,8 @@ impl InstrumentKind {
             Self::Oscilloscope => "Oscilloscope",
             Self::Switch => "Switch",
             Self::Counter => "Counter",
+            Self::PowerMeter => "PowerMeter",
+            Self::SpectrumAnalyzer => "SpectrumAnalyzer",
             Self::Unknown => "Unknown",
         }
     }
