@@ -1,6 +1,6 @@
 # instrument-components — Rust test-equipment control
 
-[![CI](https://github.com/josh-hemphill/instrument-componenets-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/josh-hemphill/instrument-componenets-rs/actions/workflows/ci.yml)
+[![CI](https://github.com/josh-hemphill/instrument-components/actions/workflows/ci.yml/badge.svg)](https://github.com/josh-hemphill/instrument-components/actions/workflows/ci.yml)
 
 High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed classes (DMM, PSU, function generator, oscilloscope, switch, counter), and mock fixtures for CI — built on [visa-rs](https://crates.io/crates/visa-rs).
 
@@ -95,8 +95,8 @@ See [docs/getting-started.md](docs/getting-started.md) for the full walkthrough.
 # CI / mock only
 instrument-components = { version = "0.1", default-features = false }
 
-# Async VISA (opt-in)
-instrument-components = { version = "0.2", features = ["visa", "tokio"] }
+# Async VISA (opt-in; use git/`latest` until 0.2.0 is published)
+instrument-components = { version = "0.1", features = ["visa", "tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -106,7 +106,7 @@ Same mock path as above, with `.await` and `AsyncDeviceCatalog`:
 
 ```toml
 [dependencies]
-instrument-components = { version = "0.2", default-features = false, features = ["tokio"] }
+instrument-components = { version = "0.1", default-features = false, features = ["tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -127,11 +127,11 @@ async fn main() -> Result<()> {
 }
 ```
 
-See [docs/async.md](docs/async.md) for hardware async discovery and the full type map.
+crates.io `0.1.0` predates the async API and later instrument classes. Until `0.2.0` is published, take those features from git/`latest`.
 
 ## Documentation
 
-Published site (MkDocs): [https://josh-hemphill.github.io/instrument-componenets-rs/](https://josh-hemphill.github.io/instrument-componenets-rs/)
+Published site (MkDocs): [https://josh-hemphill.github.io/instrument-components/](https://josh-hemphill.github.io/instrument-components/)
 
 - [Getting started](docs/getting-started.md) — step-by-step setup
 - [Architecture](docs/architecture.md) — crate layout and mental model
@@ -140,7 +140,8 @@ Published site (MkDocs): [https://josh-hemphill.github.io/instrument-componenets
 - [Async I/O](docs/async.md) — tokio feature and async API
 - [API overview](docs/api-overview.md) — main types reference
 - [Examples](docs/examples.md) — runnable examples index
-- [Roadmap](docs/roadmap.md) — parity / C# competitiveness phases
+- [Roadmap](docs/roadmap.md) — dual-native reliability plan
+- [Dual-native plan](docs/dual-native-plan.md) — CI, session honesty, shared contracts
 - [Parity checklist](docs/parity-checklist.md) — Rust ↔ C# scenario matrix
 - [.NET getting started](docs/dotnet-getting-started.md) — C# port quick start
 - [Contributing](CONTRIBUTING.md)

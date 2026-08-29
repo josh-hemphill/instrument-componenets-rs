@@ -56,6 +56,6 @@ High-level control for VISA / SCPI instruments in **Rust** and **C#**: auto-disc
 
 ## Source & API reference
 
-- GitHub: [josh-hemphill/instrument-componenets-rs](https://github.com/josh-hemphill/instrument-componenets-rs)
+- GitHub: [josh-hemphill/instrument-components](https://github.com/josh-hemphill/instrument-components)
 - Rust API docs: [docs.rs/instrument-components](https://docs.rs/instrument-components) (after publish)
 - Agent-oriented notes (roadmap, parity) live in the repo `docs/` folder

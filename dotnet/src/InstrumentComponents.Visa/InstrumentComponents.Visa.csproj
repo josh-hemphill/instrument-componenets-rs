@@ -12,8 +12,8 @@
     <Authors>josh-hemphill</Authors>
     <Description>NI-VISA / Keysight VISA backend for InstrumentComponents over vendor-neutral IviFoundation.Visa.</Description>
     <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/josh-hemphill/instrument-componenets-rs</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/josh-hemphill/instrument-componenets-rs</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/josh-hemphill/instrument-components</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/josh-hemphill/instrument-components</RepositoryUrl>
     <PackageTags>visa;scpi;instrument;test-equipment;dmm;ivi</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

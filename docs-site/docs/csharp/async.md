@@ -27,7 +27,7 @@ dotnet run --project examples/MockFixtureCiAsync
 
 ## VISA async honesty
 
-[`VisaAsyncTransport`](https://github.com/josh-hemphill/instrument-componenets-rs/blob/latest/dotnet/src/InstrumentComponents.Visa/VisaAsyncTransport.cs) wraps sync `VisaTransport` in `SyncAsAsyncTransport`:
+[`VisaAsyncTransport`](https://github.com/josh-hemphill/instrument-components/blob/latest/dotnet/src/InstrumentComponents.Visa/VisaAsyncTransport.cs) wraps sync `VisaTransport` in `SyncAsAsyncTransport`:
 
 - `WriteAsync` / `ReadAsync` run blocking VISA I/O on the thread pool.
 - `CancellationToken` cancels waiting on the bridge where implemented; it does **not** cancel an in-flight native VISA call the way true APM would.

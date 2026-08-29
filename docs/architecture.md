@@ -8,7 +8,7 @@ instrument-components   (facade — package name; lib name is `instrument`)
 └── instrument-visa     (visa-rs backend, optional via `visa` feature)
 ```
 
-Consumers typically depend only on `instrument-components` and use `instrument::prelude::*`.
+Consumers typically depend only on `instrument-components` and use `instrument::prelude::*`. The native C# packages live under `dotnet/` and must stay behaviorally aligned; see [dual-native-plan.md](dual-native-plan.md).
 
 ## Layered design
 

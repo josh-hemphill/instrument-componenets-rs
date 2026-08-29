@@ -1,12 +1,14 @@
 # Contributing
 
-Thank you for contributing to instrument-components-rs.
+Thank you for contributing to instrument-components.
+
+Dual-native work (Rust + C#) follows [docs/dual-native-plan.md](docs/dual-native-plan.md). Shared TOML is the contract; do not land behavior in only one language.
 
 ## Development setup
 
 ```bash
-git clone https://github.com/josh-hemphill/instrument-componenets-rs.git
-cd instrument-componenets-rs
+git clone https://github.com/josh-hemphill/instrument-components.git
+cd instrument-components
 cargo test --workspace --no-default-features
 ```
 
@@ -29,8 +31,10 @@ cargo test --workspace --no-default-features
 | `cargo check -p instrument-components --features visa,tokio` | Async + VISA compiles |
 | `cargo clippy -p instrument-core --features async -- -D warnings` | Async clippy |
 | `cargo check -p instrument-visa --features cross-compile --target x86_64-pc-windows-gnu` | Cross-compile repr check |
+| `dotnet test dotnet/tests/InstrumentComponents.Tests` | C# mock path |
+| `dotnet test dotnet/tests/InstrumentComponents.Visa.Tests --filter "Category!=Hardware"` | C# VISA package (no instruments) |
 
-CI does **not** link against VISA (no NI-VISA on runners). Hardware verification is local.
+CI does **not** link against VISA (no NI-VISA on GitHub-hosted runners). Hardware verification is local. The release workflow requires **both** the Rust `CI` and `.NET` workflows.
 
 ## Code style
 
@@ -91,6 +95,6 @@ Publish order on crates.io:
 2. `instrument-visa`
 3. `instrument-components`
 
-Set `CARGO_REGISTRY_TOKEN` in GitHub repository secrets. Tag `v*` triggers the release workflow.
+Set `CARGO_REGISTRY_TOKEN` and `NUGET_API_KEY` in GitHub repository secrets. Tag `v*` triggers the release workflow, which waits on Rust **and** .NET CI.
 
 Pre-first-publish: `cargo publish -p instrument-core --dry-run --allow-dirty` validates packaging. Dependent crates require `instrument-core` on crates.io before their dry-run verify step succeeds.

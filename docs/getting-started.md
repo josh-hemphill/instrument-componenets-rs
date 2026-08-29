@@ -105,7 +105,7 @@ Add `features = ["tokio"]` (and `tokio` runtime dep). Use `AsyncDeviceCatalog`, 
 
 ```toml
 [dependencies]
-instrument-components = { version = "0.2", default-features = false, features = ["tokio"] }
+instrument-components = { version = "0.1", default-features = false, features = ["tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 

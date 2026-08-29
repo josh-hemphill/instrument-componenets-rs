@@ -9,11 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Canonical GitHub and GitHub Pages URLs are `josh-hemphill/instrument-components` (not the misspelled `instrument-componenets-rs`)
+- Docs and examples depend on `0.1` plus git/`latest` for unreleased async APIs, not a non-existent `0.2` crate
 - Generated dialect and SCPI tables now match `cargo fmt` so CI's format check passes
-- GitHub and GitHub Pages URLs point at `instrument-componenets-rs`
 
 ### Added
 
+- Dual-native reliability plan (`docs/dual-native-plan.md`)
+- Release workflow requires the .NET CI workflow before crates.io or NuGet publish
 - Full async API behind `tokio` feature: `AsyncScpiSession`, `AsyncInstrumentSession`, `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`
 - Async typed classes: `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`, `AsyncPowerMeter`, `AsyncSpectrumAnalyzer`
 - Sync typed classes: `Oscilloscope`, `Switch`, `Counter`, `PowerMeter`, `SpectrumAnalyzer` (in addition to DMM / PSU / FGen)
@@ -54,4 +57,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depends on `visa-rs` 0.7.0-alpha.1 (pre-release)
 - Async APIs shipped in Unreleased (enable `tokio`); originally noted as planned for a later minor
 
-[0.1.0]: https://github.com/josh-hemphill/instrument-componenets-rs/releases/tag/v0.1.0
+[0.1.0]: https://github.com/josh-hemphill/instrument-components/releases/tag/v0.1.0
