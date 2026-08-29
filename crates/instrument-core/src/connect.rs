@@ -66,4 +66,25 @@ impl ConnectOptions {
         self.per_op_timeout = Some(timeout);
         self
     }
+
+    /// Single I/O timeout for backends (VISA) that cannot split read vs write.
+    pub fn io_timeout(&self) -> Duration {
+        self.per_op_timeout
+            .unwrap_or_else(|| self.read_timeout.max(self.write_timeout))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn io_timeout_uses_max_of_read_and_write() {
+        let mut opts = ConnectOptions::default();
+        opts.read_timeout = Duration::from_secs(2);
+        opts.write_timeout = Duration::from_secs(7);
+        assert_eq!(opts.io_timeout(), Duration::from_secs(7));
+        opts.per_op_timeout = Some(Duration::from_millis(50));
+        assert_eq!(opts.io_timeout(), Duration::from_millis(50));
+    }
 }

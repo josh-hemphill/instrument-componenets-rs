@@ -66,6 +66,16 @@ impl AsyncDeviceCatalog {
         }
     }
 
+    /// Sets the default connect options used when opening sessions from this catalog.
+    pub fn with_connect_options(mut self, opts: ConnectOptions) -> Self {
+        self.connect_options = opts;
+        self
+    }
+
+    pub fn connect_options(&self) -> &ConnectOptions {
+        &self.connect_options
+    }
+
     pub async fn from_fixture(address: &str, fixture: ScriptedFixture) -> Result<Self> {
         let addr = if address.starts_with("mock://") {
             ResourceAddress::parse(address)?

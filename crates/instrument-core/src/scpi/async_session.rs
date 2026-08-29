@@ -107,8 +107,7 @@ impl AsyncScpiSession {
                         "write timeout",
                     );
                     if self.opts.reconnect_on_failure {
-                        let _ = self.transport.reconnect().await;
-                        self.record_reconnect();
+                        self.try_reconnect().await;
                     }
                     tokio::time::sleep(self.opts.retry_backoff).await;
                 }
@@ -170,8 +169,7 @@ impl AsyncScpiSession {
                         }
                     }
                     if self.opts.reconnect_on_failure {
-                        let _ = self.transport.reconnect().await;
-                        self.record_reconnect();
+                        self.try_reconnect().await;
                     }
                     self.record_failure(
                         CommsEventKind::Timeout,
@@ -224,6 +222,12 @@ impl AsyncScpiSession {
     fn record_reconnect(&self) {
         if let Some(diag) = &self.diagnostics {
             diag.record_success(CommsEventKind::Reconnect, None, 1, Duration::ZERO);
+        }
+    }
+
+    async fn try_reconnect(&mut self) {
+        if self.transport.reconnect().await.is_ok() {
+            self.record_reconnect();
         }
     }
 

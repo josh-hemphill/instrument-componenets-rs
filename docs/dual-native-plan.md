@@ -74,7 +74,7 @@ Hardware runners, crates.io/NuGet publish, UniFFI, and IVI conformance stay **la
 
 ---
 
-### Stream B — Session and transport honesty (`todo`)
+### Stream B — Session and transport honesty (`done`)
 
 **Why second:** options and errors are the reliability surface. Shared SCPI tables cannot save a session that ignores timeouts.
 

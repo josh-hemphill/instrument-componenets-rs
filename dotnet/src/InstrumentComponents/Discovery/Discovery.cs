@@ -97,7 +97,8 @@ public sealed class Discovery
 
         var candidates = rawMap.Values.ToList();
         var devices = await ProbeDevicesParallelAsync(candidates, cancellationToken).ConfigureAwait(false);
-        return DeviceCatalog.FromDevicesWithObserver(_opener, devices, _observer, _asyncOpener);
+        return DeviceCatalog.FromDevicesWithObserver(_opener, devices, _observer, _asyncOpener)
+            .WithConnectOptions(_connectOptions);
     }
 
     private async Task<List<DiscoveredDevice>> ProbeDevicesParallelAsync(List<RawResource> candidates, CancellationToken cancellationToken)

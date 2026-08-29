@@ -57,6 +57,7 @@ public class DiagnosticsTests
         }
 
         Assert.Contains(events, e => e.Kind == CommsEventKind.Timeout);
+        Assert.DoesNotContain(events, e => e.Kind == CommsEventKind.Reconnect);
     }
 }
 
@@ -92,6 +93,7 @@ public class AsyncDiagnosticsTests
         }
 
         Assert.Contains(events, e => e.Kind == CommsEventKind.Timeout);
+        Assert.DoesNotContain(events, e => e.Kind == CommsEventKind.Reconnect);
     }
 }
 

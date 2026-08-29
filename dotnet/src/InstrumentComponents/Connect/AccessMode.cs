@@ -8,6 +8,7 @@ public readonly struct AccessMode
 
     public static AccessMode NoLock => default;
 
+    /// <summary>VISA shared lock. Ivi.Visa cannot request this at open; mapping throws.</summary>
     public static AccessMode SharedLockMode => new() { SharedLock = true };
 
     public static AccessMode ExclusiveLockMode => new() { ExclusiveLock = true };

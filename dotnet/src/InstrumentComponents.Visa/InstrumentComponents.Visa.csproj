@@ -24,6 +24,10 @@
     <PackageReference Include="IviFoundation.Visa" Version="8.0.2" />
   </ItemGroup>
 
+    <ItemGroup>
+    <InternalsVisibleTo Include="InstrumentComponents.Visa.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\InstrumentComponents\InstrumentComponents.csproj" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />

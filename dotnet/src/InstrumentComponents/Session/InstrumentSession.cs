@@ -11,7 +11,7 @@ using InstrumentComponents.Transport;
 namespace InstrumentComponents.Session;
 
 /// <summary>Active instrument session with SCPI and cached identity.</summary>
-public sealed class InstrumentSession
+public sealed class InstrumentSession : IDisposable
 {
     public ResourceAddress Address { get; }
     public ScpiSession Scpi { get; }
@@ -56,6 +56,8 @@ public sealed class InstrumentSession
             throw new CommunicationException(Address.Raw, command, 1, ex);
         }
     }
+
+    public void Dispose() => Scpi.Dispose();
 }
 
 /// <summary>Reuses a single underlying session across typed views.</summary>

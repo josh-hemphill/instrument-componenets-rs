@@ -10,7 +10,7 @@ using InstrumentComponents.Transport;
 namespace InstrumentComponents.Session;
 
 /// <summary>Async instrument session with SCPI and cached identity.</summary>
-public sealed class AsyncInstrumentSession
+public sealed class AsyncInstrumentSession : IDisposable
 {
     public ResourceAddress Address { get; }
     public AsyncScpiSession Scpi { get; }
@@ -80,6 +80,8 @@ public sealed class AsyncInstrumentSession
             throw new CommunicationException(Address.Raw, command, 1, ex);
         }
     }
+
+    public void Dispose() => Scpi.Dispose();
 }
 
 /// <summary>Async session pool with lock.</summary>

@@ -1,4 +1,5 @@
 using InstrumentComponents.Catalog;
+using InstrumentComponents.Connect;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Mock;
 
@@ -88,5 +89,21 @@ public class MockCatalogTests
         var dmm = await catalog.Device("mock://dmm").OpenDmmAsync();
         var volts = await dmm.MeasureVoltageDcAsync();
         Assert.Equal(1.0, volts);
+    }
+
+    [Fact]
+    public void CatalogPreservesConnectOptions()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Acme", "DMM1", "SN1", "1.0")
+            .Kinds(InstrumentKind.Dmm)
+            .OnQuery(":MEAS:VOLT:DC?", "1.0")
+            .Build();
+        var opts = new ConnectOptions { Retries = 9, WriteTimeout = TimeSpan.FromSeconds(3) };
+        var catalog = DeviceCatalog.FromFixture("mock://dmm", fixture).WithConnectOptions(opts);
+        Assert.Equal(9u, catalog.ConnectOptions.Retries);
+        using var session = catalog.Device("mock://dmm").OpenSession();
+        Assert.Equal(9u, session.Scpi.Options.Retries);
+        Assert.Equal(opts.IoTimeout(), session.Scpi.Options.IoTimeout());
     }
 }

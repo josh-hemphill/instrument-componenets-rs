@@ -31,5 +31,5 @@ public abstract class AsyncTransportBase : IAsyncTransport
     public virtual TransportIdentity Identity => new();
 
     public virtual ValueTask ConfigureAsync(ConnectOptions opts, CancellationToken cancellationToken = default) =>
-        SetReadTimeoutAsync(opts.ReadTimeout, cancellationToken);
+        SetReadTimeoutAsync(opts.IoTimeout(), cancellationToken);
 }

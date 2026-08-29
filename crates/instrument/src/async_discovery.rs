@@ -148,7 +148,8 @@ impl AsyncDiscovery {
             self.opener.clone(),
             devices,
             self.observer,
-        ))
+        )
+        .with_connect_options(self.connect_options))
     }
 }
 

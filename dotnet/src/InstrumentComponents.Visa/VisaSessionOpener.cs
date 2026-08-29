@@ -38,6 +38,11 @@ public sealed class VisaSessionOpener : ISessionOpener, IAsyncSessionOpener
         return ValueTask.FromResult<IAsyncTransport>(transport);
     }
 
-    private static AccessModes MapAccessMode(AccessMode mode) =>
-        mode.ExclusiveLock ? AccessModes.ExclusiveLock : AccessModes.None;
+    internal static AccessModes MapAccessMode(AccessMode mode)
+    {
+        if (mode.SharedLock)
+            throw new InstrumentUnsupportedException(
+                "Ivi.Visa AccessModes does not support shared lock");
+        return mode.ExclusiveLock ? AccessModes.ExclusiveLock : AccessModes.None;
+    }
 }

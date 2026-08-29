@@ -8,7 +8,7 @@ using InstrumentComponents.Transport;
 namespace InstrumentComponents.Scpi;
 
 /// <summary>SCPI session over a transport.</summary>
-public sealed class ScpiSession
+public sealed class ScpiSession : IDisposable
 {
     private readonly ITransport _transport;
     private readonly ConnectOptions _opts;
@@ -23,6 +23,11 @@ public sealed class ScpiSession
         _transport = transport;
         _opts = opts;
         transport.Configure(opts);
+        if (opts.ResetOnConnect)
+        {
+            try { new global::InstrumentComponents.Ieee4882.Ieee4882(this).ClearStatus(); } catch { /* best-effort */ }
+            try { new global::InstrumentComponents.Ieee4882.Ieee4882(this).Reset(); } catch { /* best-effort */ }
+        }
     }
 
     public ScpiSession WithDiagnostics(CommsDiagnostics diagnostics)
@@ -95,9 +100,7 @@ public sealed class ScpiSession
             {
                 RecordFailure(CommsEventKind.Timeout, command, attempts, started, "write timeout");
                 if (_opts.ReconnectOnFailure)
-                {
-                    try { _transport.Reconnect(); RecordReconnect(); } catch { /* ignore */ }
-                }
+                    TryReconnect();
                 Thread.Sleep(_opts.RetryBackoff);
             }
             catch (InstrumentTimeoutException)
@@ -158,9 +161,7 @@ public sealed class ScpiSession
                         catch (InstrumentTimeoutException) { /* fall through */ }
                     }
                     if (_opts.ReconnectOnFailure)
-                    {
-                        try { _transport.Reconnect(); RecordReconnect(); } catch { /* ignore */ }
-                    }
+                        TryReconnect();
                     RecordFailure(CommsEventKind.Timeout, command, 1, started, "read timeout");
                     throw;
                 }
@@ -186,12 +187,33 @@ public sealed class ScpiSession
     private void RecordReconnect() =>
         _diagnostics?.RecordSuccess(CommsEventKind.Reconnect, null, 1, TimeSpan.Zero);
 
+    private void TryReconnect()
+    {
+        try
+        {
+            _transport.Reconnect();
+            RecordReconnect();
+        }
+        catch
+        {
+            // Unsupported or failed reconnect must not look like success.
+        }
+    }
+
     private TimeSpan EffectiveReadTimeout() => _opts.PerOpTimeout ?? _opts.ReadTimeout;
 
     public bool ProbeSystErr()
     {
         if (_systErrSupported is { } v) return v;
-        _systErrSupported = QueryWithTimeout("SYST:ERR?", TimeSpan.FromMilliseconds(500)) is not null;
+        try
+        {
+            _ = QueryWithTimeout("SYST:ERR?", TimeSpan.FromMilliseconds(500));
+            _systErrSupported = true;
+        }
+        catch
+        {
+            _systErrSupported = false;
+        }
         return _systErrSupported.Value;
     }
 
@@ -228,4 +250,11 @@ public sealed class ScpiSession
     public static double ParseF64(string response) => ScpiProtocol.ParseF64(response);
 
     public static IReadOnlyList<double> ParseF64Csv(string response) => ScpiProtocol.ParseF64Csv(response);
+
+    public void Dispose()
+    {
+        if (_transport is IDisposable disposable)
+            disposable.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }

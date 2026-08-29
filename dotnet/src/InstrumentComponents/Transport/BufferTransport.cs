@@ -24,6 +24,4 @@ public sealed class BufferTransport : TransportBase
     public override void Clear() => _readPos = 0;
 
     public override void SetReadTimeout(TimeSpan timeout) { }
-
-    public override void Reconnect() { }
 }

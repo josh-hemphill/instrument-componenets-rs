@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Canonical GitHub and GitHub Pages URLs are `josh-hemphill/instrument-components` (not the misspelled `instrument-componenets-rs`)
 - Docs and examples depend on `0.1` plus git/`latest` for unreleased async APIs, not a non-existent `0.2` crate
 - Generated dialect and SCPI tables now match `cargo fmt` so CI's format check passes
+- Discovery connect options now apply to sessions opened from the resulting catalog
+- Reconnect diagnostics are recorded only when reconnect succeeds
+- C# SCPI number parse/format is culture-invariant
+- C# `ProbeSystErr` treats transport failure as unsupported
+- C# `ResetOnConnect` issues `*CLS`/`*RST` like Rust
+- C# VISA `SharedLock` fails closed (`Ivi.Visa` has no shared-lock access mode)
+- C# `VisaTransport` disposes the underlying VISA session
 
 ### Added
 

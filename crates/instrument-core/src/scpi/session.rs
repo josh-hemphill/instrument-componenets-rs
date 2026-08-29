@@ -107,8 +107,7 @@ impl ScpiSession {
                         "write timeout",
                     );
                     if self.opts.reconnect_on_failure {
-                        let _ = self.transport.reconnect();
-                        self.record_reconnect();
+                        self.try_reconnect();
                     }
                     thread::sleep(self.opts.retry_backoff);
                 }
@@ -170,8 +169,7 @@ impl ScpiSession {
                         }
                     }
                     if self.opts.reconnect_on_failure {
-                        let _ = self.transport.reconnect();
-                        self.record_reconnect();
+                        self.try_reconnect();
                     }
                     self.record_failure(
                         CommsEventKind::Timeout,
@@ -224,6 +222,12 @@ impl ScpiSession {
     fn record_reconnect(&self) {
         if let Some(diag) = &self.diagnostics {
             diag.record_success(CommsEventKind::Reconnect, None, 1, Duration::ZERO);
+        }
+    }
+
+    fn try_reconnect(&mut self) {
+        if self.transport.reconnect().is_ok() {
+            self.record_reconnect();
         }
     }
 

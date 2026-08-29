@@ -80,3 +80,26 @@ fn multi_session_same_device() {
     let _dmm = dev.open_dmm().unwrap();
     let _psu = dev.open_dc_power_supply().unwrap();
 }
+
+#[test]
+fn catalog_preserves_connect_options() {
+    let fixture = ScriptedFixture::builder()
+        .idn("Acme", "DMM1", "SN1", "1.0")
+        .kinds([InstrumentKind::Dmm])
+        .on_query(":MEAS:VOLT:DC?", "1.0")
+        .build();
+    let mut opts = ConnectOptions::default();
+    opts.retries = 9;
+    opts.write_timeout = std::time::Duration::from_secs(3);
+    let catalog = DeviceCatalog::from_fixture("mock://dmm", fixture)
+        .unwrap()
+        .with_connect_options(opts.clone());
+    assert_eq!(catalog.connect_options().retries, 9);
+    let session = catalog
+        .device("mock://dmm")
+        .unwrap()
+        .open_session()
+        .unwrap();
+    assert_eq!(session.scpi().options().retries, 9);
+    assert_eq!(session.scpi().options().io_timeout(), opts.io_timeout());
+}
