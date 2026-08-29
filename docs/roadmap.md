@@ -11,7 +11,7 @@
 | 4 — C# VISA cross-platform | `net8.0` TFM; Ubuntu compile CI; Linux docs | Done |
 | 5 — VISA async honesty | Document sync-bridge; APM spike go/no-go | Done (keep sync bridge) |
 
-**Deferred (unchanged):** package publishing, UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance.
+**Deferred (unchanged):** package publishing, UniFFI / Interoptopus as a replacement for `dotnet/` (Interoptopus 0.16 is the stronger C# generator — see [interop-eval.md](interop-eval.md)), process-supervised HAL, IVI Config Store / `IIvi*` conformance.
 
 ## In progress: Class depth, RF classes, docs site
 

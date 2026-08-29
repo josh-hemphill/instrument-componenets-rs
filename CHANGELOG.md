@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared TOML tables + codegen for SCPI commands and capability probes (Rust + C#)
 - Examples: `mock_fixture_ci_async`, `discover_async`; C# examples under `dotnet/examples/`
 - Async integration tests and CI tokio job coverage
-- Docs: `docs/roadmap.md`, `docs/parity-checklist.md`, `docs/capability-matrix.md`, `docs/dotnet-getting-started.md`, `docs/visa-async-csharp.md`
+- Docs: `docs/roadmap.md`, `docs/parity-checklist.md`, `docs/capability-matrix.md`, `docs/dotnet-getting-started.md`, `docs/visa-async-csharp.md`, `docs/interop-eval.md`
 
 ### Changed
 

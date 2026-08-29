@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["."]
+
+[package]
+name = "interoptopus-eval"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Spike: Interoptopus 0.16 C# generation vs UniFFI for instrument-components"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+interoptopus = { version = "0.16.4", features = ["macros", "tokio"] }
+tokio = { version = "1", features = ["time", "rt-multi-thread"] }
+
+[dev-dependencies]
+interoptopus_csharp = "0.16.4"
