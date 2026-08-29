@@ -1,4 +1,6 @@
-# Getting started
+# Getting started (Rust)
+
+Contributor-oriented Rust walkthrough. Dual-language published docs: [docs-site getting started](https://josh-hemphill.github.io/instrument-components/getting-started/). C#: [dotnet-getting-started.md](dotnet-getting-started.md).
 
 ## Prerequisites
 

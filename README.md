@@ -1,17 +1,17 @@
-# instrument-components — Rust test-equipment control
+# instrument-components — dual-native test-equipment control
 
 [![CI](https://github.com/josh-hemphill/instrument-components/actions/workflows/ci.yml/badge.svg)](https://github.com/josh-hemphill/instrument-components/actions/workflows/ci.yml)
 
-High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed classes (DMM, PSU, function generator, oscilloscope, switch, counter), and mock fixtures for CI — built on [visa-rs](https://crates.io/crates/visa-rs).
+High-level **Rust** and **C#** control for VISA instruments: auto-discovery, IVI-inspired typed classes, and mock fixtures for CI. Shared SCPI, dialect, and classifier tables keep the two native implementations aligned.
 
-**Install:** `cargo add instrument-components`  
-**Import:** `use instrument::prelude::*` (the library name stays `instrument` even though the package is `instrument-components`)
+**Rust:** `cargo add instrument-components` then `use instrument::prelude::*` (the library name stays `instrument`).  
+**C#:** project-reference `InstrumentComponents` (and `InstrumentComponents.Visa` for hardware) — see [dotnet/](dotnet/).
 
 ## What you get
 
 - Auto-discovery of USB, GPIB, and serial VISA resources
-- Typed instrument classes with SI units (volts, amps, hertz, seconds): DMM, DC power supply, function generator, oscilloscope, switch, counter
-- Mock transport for hardware-free CI
+- Typed instrument classes with SI units (volts, amps, hertz, seconds): DMM, DC power supply, function generator, oscilloscope, switch, counter, power meter, spectrum analyzer
+- Mock transport for hardware-free CI in both languages
 - Per-device comms health and optional push diagnostics
 - Stable `DeviceId` for instrument replacement workflows
 
@@ -19,14 +19,14 @@ High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed
 
 | I want to… | Start here |
 |---|---|
-| Test in CI without hardware | [Mock quick start](#mock-quick-start) |
-| Talk to real USB/GPIB gear | [Hardware quick start](#hardware-quick-start) |
+| Test in CI without hardware | [Mock quick start](#mock-quick-start) · [C# mock](dotnet/README.md#mock-quick-start-ci-no-visa) |
+| Talk to real USB/GPIB gear | [Hardware quick start](#hardware-quick-start) · [C# hardware](dotnet/README.md#hardware-quick-start-windows-or-linux--visa) |
 | Build an app with device pickers | [docs/discovery.md](docs/discovery.md) |
-| Use async VISA I/O (opt-in) | [docs/async.md](docs/async.md) |
+| Use async VISA I/O (opt-in) | [docs/async.md](docs/async.md) · [C# async](docs/visa-async-csharp.md) |
 
 ## Mock quick start
 
-No VISA installation required.
+No VISA installation required. Rust:
 
 ```toml
 [dependencies]
@@ -46,6 +46,12 @@ let catalog = DeviceCatalog::from_fixture("mock://smu-1", fixture)?;
 let dmm = catalog.open_dmm("mock://smu-1")?;
 let volts = dmm.measure_voltage_dc(None)?;
 println!("{volts} V");
+```
+
+C# (same fixture, no VISA):
+
+```bash
+dotnet run --project dotnet/examples/MockFixtureCi
 ```
 
 ## Hardware quick start
@@ -133,7 +139,7 @@ crates.io `0.1.0` predates the async API and later instrument classes. Until `0.
 
 Published site (MkDocs): [https://josh-hemphill.github.io/instrument-components/](https://josh-hemphill.github.io/instrument-components/)
 
-- [Getting started](docs/getting-started.md) — step-by-step setup
+- [Getting started](docs/getting-started.md) — Rust step-by-step setup (published dual-language walkthrough: [docs-site](https://josh-hemphill.github.io/instrument-components/))
 - [Architecture](docs/architecture.md) — crate layout and mental model
 - [Discovery](docs/discovery.md) — probe policy, device assignment
 - [Diagnostics](docs/diagnostics.md) — health polling and observers
@@ -143,14 +149,14 @@ Published site (MkDocs): [https://josh-hemphill.github.io/instrument-components/
 - [Roadmap](docs/roadmap.md) — dual-native reliability plan
 - [Dual-native plan](docs/dual-native-plan.md) — CI, session honesty, shared contracts
 - [Parity checklist](docs/parity-checklist.md) — Rust ↔ C# scenario matrix
-- [.NET getting started](docs/dotnet-getting-started.md) — C# port quick start
+- [.NET getting started](docs/dotnet-getting-started.md) — C# quick start (first-class, not a port afterthought)
 - [Contributing](CONTRIBUTING.md)
 
 API reference on [docs.rs](https://docs.rs/instrument-components) (after first publish). Local docs site: `docs-site/` (`pip install -r requirements.txt && mkdocs serve`).
 
 ## .NET / NuGet
 
-A native C# port lives under [`dotnet/`](dotnet/). Install from NuGet:
+Native C# packages live under [`dotnet/`](dotnet/) — first-class, same contracts as Rust. Install from NuGet:
 
 ```bash
 dotnet add package InstrumentComponents          # mock/CI — no VISA

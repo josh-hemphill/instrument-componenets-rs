@@ -109,25 +109,25 @@ Fixes (both languages unless noted):
 
 ---
 
-### Stream D — Parity, docs, and remaining class depth (`todo`)
+### Stream D — Parity, docs, and remaining class depth (`done`)
 
 **Why fourth:** usefulness after the contract exists.
 
 1. Fill parity-checklist holes: C# multi-session test; C# examples for `dmm_measure`, `manual_tcpip`, `discover_async` (or explicitly mark hardware-only Rust examples).
 2. `docs/api-overview.md` includes PowerMeter and SpectrumAnalyzer.
-3. Counter: define and test gate-time / channel / timeout behavior, or mark timeout `deferred` with a reason.
-4. Oscilloscope binary waveform: implement behind the dialect/golden-vector path, or keep `todo` with no “release-ready” claim.
-5. Docs site is the published surface; keep `docs/` as contributor planning or fold overlapping guides so they cannot diverge.
+3. Counter: gate time and channel select are tested. A dedicated class-level measurement timeout is **deferred** — queries already use `ConnectOptions` I/O timeout, and generic SCPI has no extra timeout command to vectorize.
+4. Oscilloscope binary waveform stays `todo`. ASCII capture is the supported path; binary `#N` definite-block must go through dialect + golden vectors before any release-ready claim.
+5. Docs site (`docs-site/`) is the published surface. `docs/` is contributor planning; `capability-matrix.md` is copied into the site (keep them in sync).
 6. README/architecture introduce **both** languages as first-class, not “Rust plus a C# port.”
 
 **Done when:** the parity checklist has no silent gaps, and the capability matrix matches tested behavior.
 
 ---
 
-### Later (do not start until A–C land)
+### Later (do not start until A–D land)
 
 - Self-hosted hardware smoke (1 DMM + 1 other class; Windows NI and optionally Linux Keysight). Publish artifacts, never require GitHub-hosted VISA.
-- `0.2.0` publish (crates.io + NuGet) only after A–C and a changelog that does not promise unverified models.
+- `0.2.0` publish (crates.io + NuGet) only after A–D and a changelog that does not promise unverified models.
 - C# true async VISA / APM spike (`docs/visa-async-csharp.md` criteria 2–4).
 - Benchmarks in CI (C# BenchmarkDotNet already exists; add Rust criterion for the same SCPI framing/query cases) — compare mode, no flaky fail-on-regression at first.
 - API reference for C# equivalent to docs.rs.

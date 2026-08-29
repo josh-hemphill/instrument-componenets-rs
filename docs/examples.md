@@ -25,6 +25,9 @@ cargo run -p instrument-components --features visa,tokio --example discover_asyn
 dotnet run --project dotnet/examples/MockFixtureCi
 dotnet run --project dotnet/examples/MockFixtureCiAsync
 dotnet run --project dotnet/examples/Discover          # needs VISA
+dotnet run --project dotnet/examples/DiscoverAsync     # needs VISA
+dotnet run --project dotnet/examples/DmmMeasure        # needs VISA
+dotnet run --project dotnet/examples/ManualTcpip       # needs VISA
 dotnet run --project dotnet/examples/AssignInstruments # needs VISA
 ```
 
@@ -40,4 +43,7 @@ dotnet run --project dotnet/examples/AssignInstruments # needs VISA
 | `dotnet/.../MockFixtureCi` | C# mock CI fixture |
 | `dotnet/.../MockFixtureCiAsync` | C# async mock |
 | `dotnet/.../Discover` | C# VISA discover |
+| `dotnet/.../DiscoverAsync` | C# async VISA scan |
+| `dotnet/.../DmmMeasure` | C# open a DMM and measure DC voltage |
+| `dotnet/.../ManualTcpip` | C# manual TCPIP address + discovery |
 | `dotnet/.../AssignInstruments` | C# device-id assignment |

@@ -106,4 +106,20 @@ public class MockCatalogTests
         Assert.Equal(9u, session.Scpi.Options.Retries);
         Assert.Equal(opts.IoTimeout(), session.Scpi.Options.IoTimeout());
     }
+
+    [Fact]
+    public void MultiSessionSameDevice()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Acme", "PSU", "1", "1.0")
+            .Kinds(InstrumentKind.Dmm, InstrumentKind.DcPowerSupply)
+            .OnQuery(":MEAS:VOLT:DC?", "1.0")
+            .OnWrite(":SOUR1:VOLT 3.3")
+            .Build();
+
+        var catalog = DeviceCatalog.FromFixture("mock://dev", fixture);
+        var dev = catalog.Device("mock://dev");
+        _ = dev.OpenDmm();
+        _ = dev.OpenDcPowerSupply();
+    }
 }

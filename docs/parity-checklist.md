@@ -6,6 +6,7 @@ Shared scenarios both implementations must cover. Update this table when adding 
 |---|---|---|---|
 | Mock DMM measure | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests.FixtureDmmMeasure` | |
 | Async mock DMM measure | `crates/instrument/tests/async_mock_catalog.rs` | `MockCatalogTests.AsyncFixtureDmmMeasure` | |
+| Multi-session same device | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests.MultiSessionSameDevice` | |
 | Static discovery classify | `crates/instrument/tests/discovery_static.rs` | `DiscoveryStaticTests` | |
 | Async static discovery | `crates/instrument/tests/async_discovery_static.rs` | `AsyncDiscoveryStaticTests` | |
 | SCPI query retry after timeout | `crates/instrument-core/tests/reliability.rs` | `ReliabilityTests` | |
@@ -29,6 +30,9 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | Mock example runnable | `examples/mock_fixture_ci` | `dotnet/examples/MockFixtureCi` | |
 | Async mock example | `examples/mock_fixture_ci_async` | `dotnet/examples/MockFixtureCiAsync` | |
 | Discover example | `examples/discover` | `dotnet/examples/Discover` | Needs VISA |
+| DMM measure example | `examples/dmm_measure` | `dotnet/examples/DmmMeasure` | Needs VISA |
+| Manual TCPIP example | `examples/manual_tcpip` | `dotnet/examples/ManualTcpip` | Needs VISA |
+| Async discover example | `examples/discover_async` | `dotnet/examples/DiscoverAsync` | Needs VISA |
 
 ## Known intentional differences
 

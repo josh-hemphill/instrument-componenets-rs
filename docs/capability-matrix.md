@@ -42,7 +42,7 @@ Rows are **Base** (target before calling a class “release-ready”) or **Exten
 | Base | Edge trigger | done |
 | Base | Single acquire | done |
 | Base | Vpp / frequency measurement | done |
-| Extension | Binary waveform | todo |
+| Extension | Binary waveform (`#N` definite-block) | todo — ASCII capture is the supported path; binary needs a dialect key and golden vector before any release-ready claim |
 
 ## Switch
 
@@ -57,7 +57,8 @@ Rows are **Base** (target before calling a class “release-ready”) or **Exten
 | Group | Capability | Status |
 |---|---|---|
 | Base | Frequency / period / totalize | done |
-| Base | Gate time, channel select, timeout | partial |
+| Base | Gate time, channel select | done |
+| Base | Dedicated measurement timeout (beyond `ConnectOptions` I/O timeout) | deferred — queries already bound by session `read_timeout` / `per_op_timeout`; a class-level timeout API has no generic SCPI dialect key |
 
 ## PowerMeter
 
