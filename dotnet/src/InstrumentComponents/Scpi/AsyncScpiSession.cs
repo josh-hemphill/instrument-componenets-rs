@@ -29,7 +29,7 @@ public sealed class AsyncScpiSession : IDisposable
         {
             try { await new global::InstrumentComponents.Ieee4882.AsyncIeee4882(session).ClearStatusAsync(cancellationToken).ConfigureAwait(false); } catch { }
             try { await new global::InstrumentComponents.Ieee4882.AsyncIeee4882(session).ResetAsync(cancellationToken).ConfigureAwait(false); } catch { }
-            await session.RestoreIoTimeoutAsync(cancellationToken).ConfigureAwait(false);
+            await session.RestoreIoTimeoutAsync().ConfigureAwait(false);
         }
         return session;
     }
@@ -71,7 +71,7 @@ public sealed class AsyncScpiSession : IDisposable
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
-            await RestoreIoTimeoutAsync(cancellationToken).ConfigureAwait(false);
+            await RestoreIoTimeoutAsync().ConfigureAwait(false);
         }
         _readBuffer.Clear();
     }
@@ -183,7 +183,7 @@ public sealed class AsyncScpiSession : IDisposable
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
-            await RestoreIoTimeoutAsync(cancellationToken).ConfigureAwait(false);
+            await RestoreIoTimeoutAsync().ConfigureAwait(false);
         }
     }
 
@@ -211,9 +211,9 @@ public sealed class AsyncScpiSession : IDisposable
 
     private TimeSpan EffectiveReadTimeout() => _opts.PerOpTimeout ?? _opts.ReadTimeout;
 
-    /// Restores the configured I/O timeout after a short probe, flush, or query.
-    private ValueTask RestoreIoTimeoutAsync(CancellationToken cancellationToken) =>
-        _transport.SetReadTimeoutAsync(_opts.IoTimeout(), cancellationToken);
+    /// Restores the configured I/O timeout; ignores caller cancel so cleanup cannot leave a short timeout.
+    private ValueTask RestoreIoTimeoutAsync() =>
+        _transport.SetReadTimeoutAsync(_opts.IoTimeout(), CancellationToken.None);
 
     public async Task<bool> ProbeSystErrAsync(CancellationToken cancellationToken = default)
     {

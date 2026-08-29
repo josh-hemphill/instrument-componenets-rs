@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - C# `VisaSessionOpener.Open` preserves `InstrumentUnsupportedException` for `SharedLock` (map access mode before the VISA open try)
 - C# `SyncAsAsyncTransport` disposes the inner sync transport so async sessions close native VISA handles
 - SCPI sessions restore I/O timeout after short probe/flush/query timeouts (ResetOnConnect no longer leaves a 500ms VISA timeout)
+- C# async SCPI cleanup restores I/O timeout without the caller cancellation token, so a cancelled flush/query cannot leave a short VISA timeout
 
 ### Added
 

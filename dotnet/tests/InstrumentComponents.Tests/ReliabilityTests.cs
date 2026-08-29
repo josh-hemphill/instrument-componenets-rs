@@ -70,6 +70,51 @@ public class ReliabilityTests
         Assert.True(inner.Disposed);
     }
 
+    [Fact]
+    public async Task CancelledFlushStillRestoresIoTimeout()
+    {
+        var cts = new CancellationTokenSource();
+        var transport = new CancelAfterShortTimeoutTransport(cts);
+        var opts = new ConnectOptions
+        {
+            ReadTimeout = TimeSpan.FromSeconds(9),
+            WriteTimeout = TimeSpan.FromSeconds(4),
+            ReconnectOnFailure = false,
+        };
+        var session = await AsyncScpiSession.CreateAsync(transport, opts);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => session.FlushAsync(cts.Token));
+        Assert.Equal(opts.IoTimeout(), transport.LastReadTimeout);
+    }
+
+    private sealed class CancelAfterShortTimeoutTransport : AsyncTransportBase
+    {
+        private readonly CancellationTokenSource _cts;
+
+        public CancelAfterShortTimeoutTransport(CancellationTokenSource cts) => _cts = cts;
+
+        public TimeSpan? LastReadTimeout { get; private set; }
+
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.CompletedTask;
+        }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            _cts.Cancel();
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(0);
+        }
+
+        public override ValueTask SetReadTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            LastReadTimeout = timeout;
+            return ValueTask.CompletedTask;
+        }
+    }
+
     private sealed class DisposableTransport : TransportBase, IDisposable
     {
         public bool Disposed { get; private set; }
