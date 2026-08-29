@@ -155,26 +155,6 @@ public static class DialectRegistry
         },
         new DialectProfile
         {
-            Id = "generic_pwrmeter",
-            Kind = InstrumentKind.PowerMeter,
-            ManufacturerGlob = "*",
-            ModelGlob = "*",
-            Channels = 1,
-            Commands = new Dictionary<string, string>
-            {
-            ["unit"] = ":UNIT:POW {unit}",
-            ["auto_range"] = ":SENS:POW:RANG:AUTO {state}",
-            ["auto_average"] = ":SENS:AVER:COUN:AUTO {state}",
-            ["correction_frequency"] = ":SENS:FREQ {hz}",
-            ["offset"] = ":SENS:CORR:GAIN2 {db}",
-            ["initiate"] = "INIT",
-            ["fetch"] = "FETC?",
-            ["read"] = "READ?",
-            ["configure"] = ":CONF"
-            },
-        },
-        new DialectProfile
-        {
             Id = "keysight_sensor",
             Kind = InstrumentKind.PowerMeter,
             ManufacturerGlob = "Keysight*",
@@ -195,25 +175,22 @@ public static class DialectRegistry
         },
         new DialectProfile
         {
-            Id = "generic_specan",
-            Kind = InstrumentKind.SpectrumAnalyzer,
+            Id = "generic_pwrmeter",
+            Kind = InstrumentKind.PowerMeter,
             ManufacturerGlob = "*",
             ModelGlob = "*",
             Channels = 1,
             Commands = new Dictionary<string, string>
             {
-            ["center_frequency"] = ":FREQ:CENT {hz}",
-            ["span"] = ":FREQ:SPAN {hz}",
-            ["rbw"] = ":BAND {hz}",
-            ["vbw"] = ":BAND:VID {hz}",
-            ["ref_level"] = ":DISP:WIND:TRAC:Y:RLEV {dbm}",
-            ["trace_data"] = ":TRAC:DATA? TRACE1",
-            ["marker_peak"] = ":CALC:MARK:MAX",
-            ["marker_x"] = ":CALC:MARK:X?",
-            ["marker_y"] = ":CALC:MARK:Y?",
-            ["sweep_continuous"] = ":INIT:CONT {state}",
-            ["single_sweep"] = ":INIT:IMM",
-            ["wait_opc"] = "*OPC?"
+            ["unit"] = ":UNIT:POW {unit}",
+            ["auto_range"] = ":SENS:POW:RANG:AUTO {state}",
+            ["auto_average"] = ":SENS:AVER:COUN:AUTO {state}",
+            ["correction_frequency"] = ":SENS:FREQ {hz}",
+            ["offset"] = ":SENS:CORR:GAIN2 {db}",
+            ["initiate"] = "INIT",
+            ["fetch"] = "FETC?",
+            ["read"] = "READ?",
+            ["configure"] = ":CONF"
             },
         },
         new DialectProfile
@@ -262,6 +239,29 @@ public static class DialectRegistry
             ["wait_opc"] = "*OPC?"
             },
         },
+        new DialectProfile
+        {
+            Id = "generic_specan",
+            Kind = InstrumentKind.SpectrumAnalyzer,
+            ManufacturerGlob = "*",
+            ModelGlob = "*",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["center_frequency"] = ":FREQ:CENT {hz}",
+            ["span"] = ":FREQ:SPAN {hz}",
+            ["rbw"] = ":BAND {hz}",
+            ["vbw"] = ":BAND:VID {hz}",
+            ["ref_level"] = ":DISP:WIND:TRAC:Y:RLEV {dbm}",
+            ["trace_data"] = ":TRAC:DATA? TRACE1",
+            ["marker_peak"] = ":CALC:MARK:MAX",
+            ["marker_x"] = ":CALC:MARK:X?",
+            ["marker_y"] = ":CALC:MARK:Y?",
+            ["sweep_continuous"] = ":INIT:CONT {state}",
+            ["single_sweep"] = ":INIT:IMM",
+            ["wait_opc"] = "*OPC?"
+            },
+        },
     });
 
     static bool GlobMatch(string pat, string value)
@@ -269,9 +269,15 @@ public static class DialectRegistry
         value = value.ToLowerInvariant();
         pat = pat.ToLowerInvariant();
         if (pat == "*") return true;
-        if (pat.EndsWith('*')) return value.StartsWith(pat[..^1], StringComparison.Ordinal);
-        if (pat.StartsWith('*')) return value.EndsWith(pat[1..], StringComparison.Ordinal);
-        return value == pat;
+        var starts = pat.StartsWith('*');
+        var ends = pat.EndsWith('*');
+        return (starts, ends) switch
+        {
+            (true, true) => pat.Length <= 2 || value.Contains(pat[1..^1], StringComparison.Ordinal),
+            (false, true) => value.StartsWith(pat[..^1], StringComparison.Ordinal),
+            (true, false) => value.EndsWith(pat[1..], StringComparison.Ordinal),
+            _ => value == pat,
+        };
     }
 
     public static DialectProfile Resolve(InstrumentKind kind, string? manufacturer = null, string? model = null)

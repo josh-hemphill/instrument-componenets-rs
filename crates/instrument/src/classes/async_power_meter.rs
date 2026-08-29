@@ -1,7 +1,8 @@
+use super::dialect_io;
 use super::power_meter::PowerUnit;
 use instrument_core::error::Result;
+use instrument_core::kind::InstrumentKind;
 use instrument_core::scpi::AsyncScpiSession;
-use instrument_core::scpi_commands;
 use instrument_core::AsyncInstrumentSession;
 
 /// Async RF / microwave power meter session view.
@@ -22,6 +23,20 @@ impl AsyncPowerMeter {
         &mut self.session
     }
 
+    fn dialect(&self) -> &'static instrument_core::DialectProfile {
+        self.session.dialect_for(InstrumentKind::PowerMeter)
+    }
+
+    async fn write_dialect(&mut self, key: &str, vars: &[(&str, String)]) -> Result<()> {
+        let cmd = dialect_io::formatted(self.dialect(), key, vars)?;
+        self.session.scpi_mut().write(&cmd).await
+    }
+
+    async fn query_dialect(&mut self, key: &str) -> Result<String> {
+        let cmd = dialect_io::command(self.dialect(), key)?;
+        self.session.scpi_mut().query(cmd).await
+    }
+
     /// Configures units, auto-range/average, optional correction frequency and offset.
     pub async fn configure_measurement(
         &mut self,
@@ -31,56 +46,37 @@ impl AsyncPowerMeter {
         correction_freq_hz: Option<f64>,
         offset_db: Option<f64>,
     ) -> Result<()> {
-        let scpi = self.session.scpi_mut();
-        scpi.write(&scpi_commands::pwrmeter_unit(unit.scpi_name()))
+        let on_off = |enabled: bool| if enabled { "ON" } else { "OFF" };
+        self.write_dialect("unit", &[("unit", unit.scpi_name().into())])
             .await?;
-        scpi.write(&scpi_commands::pwrmeter_auto_range(if auto_range {
-            "ON"
-        } else {
-            "OFF"
-        }))
-        .await?;
-        scpi.write(&scpi_commands::pwrmeter_auto_average(if auto_average {
-            "ON"
-        } else {
-            "OFF"
-        }))
-        .await?;
+        self.write_dialect("auto_range", &[("state", on_off(auto_range).into())])
+            .await?;
+        self.write_dialect("auto_average", &[("state", on_off(auto_average).into())])
+            .await?;
         if let Some(hz) = correction_freq_hz {
-            scpi.write(&scpi_commands::pwrmeter_correction_frequency(hz))
+            self.write_dialect("correction_frequency", &[("hz", dialect_io::f64_text(hz))])
                 .await?;
         }
         if let Some(db) = offset_db {
-            scpi.write(&scpi_commands::pwrmeter_offset(db)).await?;
+            self.write_dialect("offset", &[("db", dialect_io::f64_text(db))])
+                .await?;
         }
         Ok(())
     }
 
     /// Initiates a measurement (INIT).
     pub async fn initiate(&mut self) -> Result<()> {
-        self.session
-            .scpi_mut()
-            .write(scpi_commands::PWRMETER_INITIATE)
-            .await
+        let cmd = dialect_io::command(self.dialect(), "initiate")?;
+        self.session.scpi_mut().write(cmd).await
     }
 
     /// Fetches the last initiated measurement (FETC?).
     pub async fn fetch(&mut self) -> Result<f64> {
-        let resp = self
-            .session
-            .scpi_mut()
-            .query(scpi_commands::PWRMETER_FETCH)
-            .await?;
-        AsyncScpiSession::parse_f64(&resp)
+        AsyncScpiSession::parse_f64(&self.query_dialect("fetch").await?)
     }
 
     /// Reads a measurement immediately (READ?).
     pub async fn read(&mut self) -> Result<f64> {
-        let resp = self
-            .session
-            .scpi_mut()
-            .query(scpi_commands::PWRMETER_READ)
-            .await?;
-        AsyncScpiSession::parse_f64(&resp)
+        AsyncScpiSession::parse_f64(&self.query_dialect("read").await?)
     }
 }

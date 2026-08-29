@@ -215,6 +215,22 @@ public class NewInstrumentKindTests
     }
 
     [Fact]
+    public void MockCatalogRigolDsaUsesTraceQuery()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Rigol Technologies", "DSA815", "SN1", "1.0")
+            .Kinds([InstrumentKind.SpectrumAnalyzer])
+            .OnWrite(":INIT")
+            .OnQuery(":TRAC? TRACE1", "-80,-70,-60")
+            .Build();
+
+        var catalog = DeviceCatalog.FromFixture("mock://sa-rigol", fixture);
+        var sa = catalog.OpenSpectrumAnalyzer("mock://sa-rigol");
+        sa.SingleSweep();
+        Assert.Equal(3, sa.FetchTraceAscii().Count);
+    }
+
+    [Fact]
     public void ParseF64CsvHandlesSpacesAndTrailingComma()
     {
         var values = ScpiSession.ParseF64Csv(" 1.0, 2.5 ,3.0,");

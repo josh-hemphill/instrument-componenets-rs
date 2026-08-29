@@ -1,3 +1,6 @@
+using InstrumentComponents.Dialects;
+using InstrumentComponents.Errors;
+using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
 
@@ -11,6 +14,14 @@ public sealed class AsyncPowerMeter
 
     public AsyncInstrumentSession Session => _session;
 
+    private DialectProfile Dialect => _session.DialectFor(InstrumentKind.PowerMeter);
+
+    private string RequireCommand(string key) =>
+        Dialect.Command(key) ?? throw new InstrumentUnsupportedException($"power meter dialect missing command '{key}'");
+
+    private string RequireFormatted(string key, params (string Name, string Value)[] vars) =>
+        Dialect.FormatCommand(key, vars) ?? throw new InstrumentUnsupportedException($"power meter dialect missing command '{key}'");
+
     public async Task ConfigureMeasurementAsync(
         PowerUnit unit,
         bool autoRange,
@@ -19,28 +30,27 @@ public sealed class AsyncPowerMeter
         double? offsetDb = null,
         CancellationToken cancellationToken = default)
     {
-        var scpi = _session.Scpi;
-        await scpi.WriteAsync(ScpiCommands.PwrmeterUnit(unit.ScpiName()), cancellationToken).ConfigureAwait(false);
-        await scpi.WriteAsync(ScpiCommands.PwrmeterAutoRange(autoRange ? "ON" : "OFF"), cancellationToken).ConfigureAwait(false);
-        await scpi.WriteAsync(ScpiCommands.PwrmeterAutoAverage(autoAverage ? "ON" : "OFF"), cancellationToken).ConfigureAwait(false);
+        await _session.Scpi.WriteAsync(RequireFormatted("unit", ("unit", unit.ScpiName())), cancellationToken).ConfigureAwait(false);
+        await _session.Scpi.WriteAsync(RequireFormatted("auto_range", ("state", autoRange ? "ON" : "OFF")), cancellationToken).ConfigureAwait(false);
+        await _session.Scpi.WriteAsync(RequireFormatted("auto_average", ("state", autoAverage ? "ON" : "OFF")), cancellationToken).ConfigureAwait(false);
         if (correctionFreqHz is { } hz)
-            await scpi.WriteAsync(ScpiCommands.PwrmeterCorrectionFrequency(hz), cancellationToken).ConfigureAwait(false);
+            await _session.Scpi.WriteAsync(RequireFormatted("correction_frequency", ("hz", ScpiFormat.Double(hz))), cancellationToken).ConfigureAwait(false);
         if (offsetDb is { } db)
-            await scpi.WriteAsync(ScpiCommands.PwrmeterOffset(db), cancellationToken).ConfigureAwait(false);
+            await _session.Scpi.WriteAsync(RequireFormatted("offset", ("db", ScpiFormat.Double(db))), cancellationToken).ConfigureAwait(false);
     }
 
     public Task InitiateAsync(CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PwrmeterInitiate, cancellationToken);
+        _session.Scpi.WriteAsync(RequireCommand("initiate"), cancellationToken);
 
     public async Task<double> FetchAsync(CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.PwrmeterFetch, cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(RequireCommand("fetch"), cancellationToken).ConfigureAwait(false);
         return ScpiSession.ParseF64(resp);
     }
 
     public async Task<double> ReadAsync(CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.PwrmeterRead, cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(RequireCommand("read"), cancellationToken).ConfigureAwait(false);
         return ScpiSession.ParseF64(resp);
     }
 }

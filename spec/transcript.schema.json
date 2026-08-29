@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/josh-hemphill/instrument-components/spec/transcript.schema.json",
+  "title": "Instrument I/O transcript",
+  "description": "Recorded SCPI write/read steps replayed by MockTransport in both languages.",
+  "type": "object",
+  "required": ["steps"],
+  "additionalProperties": false,
+  "properties": {
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["op"],
+        "additionalProperties": false,
+        "properties": {
+          "op": { "enum": ["write", "read", "clear"] },
+          "data": { "type": "string" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "op": { "const": "clear" } } },
+            "then": {},
+            "else": { "required": ["data"] }
+          }
+        ]
+      }
+    }
+  }
+}

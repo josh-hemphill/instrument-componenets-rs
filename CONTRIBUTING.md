@@ -71,6 +71,8 @@ Registry entries are **hints only** — capability probes and `*IDN?` can overri
 
 ## Shared SCPI / probe tables
 
+Shared TOML is the source of truth. Never hand-edit generated files (`scpi_commands.rs`, `ScpiCommands.cs`, `dialect.rs`, `DialectRegistry.cs`, `probes.rs`, `CapabilityProbes.cs`, `model_registry.json`).
+
 Edit TOML under `crates/instrument-core/data/`, then:
 
 ```bash
@@ -79,7 +81,13 @@ deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-dialects.ts
 deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
 ```
 
-This regenerates Rust `probes.rs` / `scpi_commands.rs` / `dialect.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs` / `DialectRegistry.cs`. Codegen runs `rustfmt` on the Rust outputs. CI fails on drift.
+This regenerates Rust `probes.rs` / `scpi_commands.rs` / `dialect.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs` / `DialectRegistry.cs`. Codegen runs `rustfmt` on the Rust outputs and fails if a `generic_*` dialect profile drifts from `scpi_commands.toml` (`spec/generic-scpi-map.json`). CI fails on drift.
+
+Typed classes that have a dialect profile (spectrum analyzer, power meter) emit the resolved dialect command, not a hardcoded generic string.
+
+## Golden vectors
+
+New class methods that emit SCPI need a row in `spec/scpi-vectors.json` (exact command string) or a shared transcript under `fixtures/` that drives the typed class and asserts **values**. Classifier changes need a row in `spec/classifier-cases.json`. Both languages load the same files — see `spec/README.md`.
 
 ## Pull requests
 

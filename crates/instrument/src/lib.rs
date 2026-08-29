@@ -62,6 +62,7 @@ pub mod async_discovery;
 pub mod classes {
     pub mod counter;
     pub mod dc_psu;
+    pub(crate) mod dialect_io;
     pub mod dmm;
     pub mod fgen;
     pub mod power_meter;

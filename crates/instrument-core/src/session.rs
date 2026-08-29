@@ -1,6 +1,7 @@
 use crate::address::ResourceAddress;
 use crate::connect::ConnectOptions;
 use crate::diagnostics::Diagnostics;
+use crate::dialect::{resolve_dialect, DialectProfile};
 use crate::error::{Error, Result};
 use crate::identity::{DeviceIdentity, Idn};
 use crate::ieee4882::Ieee4882;
@@ -55,6 +56,15 @@ impl InstrumentSession {
 
     pub fn identity(&self) -> &DeviceIdentity {
         &self.identity
+    }
+
+    /// Resolves the dialect profile for `kind` using this session's identity.
+    pub fn dialect_for(&self, kind: InstrumentKind) -> &'static DialectProfile {
+        resolve_dialect(
+            kind,
+            self.identity.manufacturer.as_deref(),
+            self.identity.model.as_deref(),
+        )
     }
 
     pub fn scpi(&self) -> &ScpiSession {

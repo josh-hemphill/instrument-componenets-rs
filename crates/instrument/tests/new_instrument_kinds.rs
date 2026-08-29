@@ -149,6 +149,21 @@ fn mock_catalog_opens_spectrum_analyzer() {
 }
 
 #[test]
+fn mock_catalog_rigol_dsa_uses_trace_query() {
+    let fixture = ScriptedFixture::builder()
+        .idn("Rigol Technologies", "DSA815", "SN1", "1.0")
+        .kinds([InstrumentKind::SpectrumAnalyzer])
+        .on_write(":INIT")
+        .on_query(":TRAC? TRACE1", "-80,-70,-60")
+        .build();
+    let catalog = DeviceCatalog::from_fixture("mock://sa-rigol", fixture).unwrap();
+    let mut sa = catalog.open_spectrum_analyzer("mock://sa-rigol").unwrap();
+    sa.single_sweep().unwrap();
+    let trace = sa.fetch_trace_ascii().unwrap();
+    assert_eq!(trace.len(), 3);
+}
+
+#[test]
 fn registry_hint_for_power_meter_and_specan() {
     let registry = instrument_core::ModelRegistry::embedded();
     let pm = registry

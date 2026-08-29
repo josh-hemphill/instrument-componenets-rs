@@ -12,10 +12,12 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | Async SCPI query retry | `crates/instrument-core/tests/async_reliability.rs` | `AsyncReliabilityTests` | |
 | Diagnostics observer + health | `crates/instrument-core/tests/diagnostics.rs` | `DiagnosticsTests` | |
 | Async diagnostics | `crates/instrument-core/tests/async_diagnostics.rs` | `AsyncDiagnosticsTests` | |
-| Transcript `smu2602` | `crates/instrument-core/tests/transcript.rs` | `TranscriptConformanceTests` | `fixtures/smu2602.json` |
-| Transcript scope | same | same | `fixtures/scope_ds1054z.json` |
-| Transcript switch | same | same | `fixtures/switch_34970a.json` |
-| Transcript counter | same | same | `fixtures/counter_53230a.json` |
+| Transcript `smu2602` | `crates/instrument/tests/transcript_behavior.rs` | `TranscriptBehaviorTests` | `fixtures/smu2602.json` — asserts 3.3 V |
+| Transcript scope | same | same | `fixtures/scope_ds1054z.json` — asserts samples + interval |
+| Transcript switch | same | same | `fixtures/switch_34970a.json` — asserts closed |
+| Transcript counter | same | same | `fixtures/counter_53230a.json` — asserts 1000 Hz |
+| Shared SCPI vectors | `crates/instrument-core/tests/shared_contracts.rs` | `SharedContractTests` | `spec/scpi-vectors.json` |
+| Shared classifier cases | same | same | `spec/classifier-cases.json` |
 | New kinds (scope/switch/counter) | `crates/instrument/tests/new_instrument_kinds.rs` | `NewInstrumentKindTests` | |
 | Class depth Dmm/Psu | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests` | AC/Ω/temp, INIT/FETC, OVP/sense |
 | Class depth Scope/Fgen | `new_instrument_kinds.rs` | `NewInstrumentKindTests` | Trigger/measure, burst/duty |

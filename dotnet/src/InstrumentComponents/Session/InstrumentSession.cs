@@ -1,6 +1,7 @@
 using InstrumentComponents.Address;
 using InstrumentComponents.Connect;
 using InstrumentComponents.Diagnostics;
+using InstrumentComponents.Dialects;
 using InstrumentComponents.Errors;
 using InstrumentComponents.Identity;
 using InstrumentComponents.Ieee4882;
@@ -34,6 +35,10 @@ public sealed class InstrumentSession : IDisposable
 
     public string AddressStr => Address.Raw;
     public DeviceIdentity Identity => _identity;
+
+    /// <summary>Resolves the dialect profile for <paramref name="kind"/> using this session's identity.</summary>
+    public DialectProfile DialectFor(InstrumentKind kind) =>
+        DialectRegistry.Resolve(kind, _identity.Manufacturer, _identity.Model);
 
     public Idn Idn() => ScpiComm("idn", scpi => new global::InstrumentComponents.Ieee4882.Ieee4882(scpi).Idn());
 

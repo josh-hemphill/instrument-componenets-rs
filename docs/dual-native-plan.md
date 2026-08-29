@@ -94,7 +94,7 @@ Fixes (both languages unless noted):
 
 ---
 
-### Stream C — Executable shared contracts (`todo`)
+### Stream C — Executable shared contracts (`done`)
 
 **Why third:** dual-native only works if the contract is data, not two copies of judgment.
 

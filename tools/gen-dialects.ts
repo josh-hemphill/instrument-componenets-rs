@@ -57,6 +57,70 @@ for (const raw of text.split("\n")) {
 }
 if (current?.id) profiles.push(current as Profile);
 
+const scpiToml = await Deno.readTextFile(
+  new URL("crates/instrument-core/data/scpi_commands.toml", root),
+);
+const genericMap = JSON.parse(
+  await Deno.readTextFile(new URL("spec/generic-scpi-map.json", root)),
+) as Record<string, Record<string, [string, string]>>;
+
+function parseTomlTables(text: string): Record<string, Record<string, string>> {
+  const tables: Record<string, Record<string, string>> = {};
+  let current = "";
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    if (line.startsWith("[") && line.endsWith("]")) {
+      current = line.slice(1, -1);
+      tables[current] ??= {};
+      continue;
+    }
+    const eq = line.indexOf("=");
+    if (eq < 0 || !current) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1);
+    }
+    tables[current][key] = value;
+  }
+  return tables;
+}
+
+const scpiTables = parseTomlTables(scpiToml);
+const mismatches: string[] = [];
+for (const profile of profiles.filter((p) => p.id.startsWith("generic_"))) {
+  const mapping = genericMap[profile.id];
+  if (!mapping) {
+    mismatches.push(`spec/generic-scpi-map.json missing profile ${profile.id}`);
+    continue;
+  }
+  for (const [key, cmd] of Object.entries(profile.commands)) {
+    const loc = mapping[key];
+    if (!loc) {
+      mismatches.push(`${profile.id}.${key} missing from spec/generic-scpi-map.json`);
+      continue;
+    }
+    const [section, field] = loc;
+    const expected = scpiTables[section]?.[field];
+    if (expected !== cmd) {
+      mismatches.push(
+        `${profile.id}.${key}: dialect ${JSON.stringify(cmd)} != ${section}.${field} ${JSON.stringify(expected)}`,
+      );
+    }
+  }
+  for (const key of Object.keys(mapping)) {
+    if (!(key in profile.commands)) {
+      mismatches.push(`spec/generic-scpi-map.json has ${profile.id}.${key} but the dialect profile does not`);
+    }
+  }
+}
+if (mismatches.length > 0) {
+  console.error("generic dialect profiles must match scpi_commands.toml:");
+  for (const line of mismatches) console.error(`  ${line}`);
+  Deno.exit(1);
+}
+
 function esc(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
@@ -110,13 +174,17 @@ fn glob_match(pat: &str, value: &str) -> bool {
     if pat == "*" {
         return true;
     }
-    if let Some(prefix) = pat.strip_suffix('*') {
-        return value.starts_with(prefix);
+    let starts = pat.starts_with('*');
+    let ends = pat.ends_with('*');
+    match (starts, ends) {
+        (true, true) => {
+            let inner = &pat[1..pat.len() - 1];
+            inner.is_empty() || value.contains(inner)
+        }
+        (false, true) => value.starts_with(&pat[..pat.len() - 1]),
+        (true, false) => value.ends_with(&pat[1..]),
+        (false, false) => value == pat,
     }
-    if let Some(suffix) = pat.strip_prefix('*') {
-        return value.ends_with(suffix);
-    }
-    value == pat
 }
 
 /// Resolves the first dialect profile matching kind + optional IDN fields.
@@ -224,9 +292,15 @@ cs += `    });
         value = value.ToLowerInvariant();
         pat = pat.ToLowerInvariant();
         if (pat == "*") return true;
-        if (pat.EndsWith('*')) return value.StartsWith(pat[..^1], StringComparison.Ordinal);
-        if (pat.StartsWith('*')) return value.EndsWith(pat[1..], StringComparison.Ordinal);
-        return value == pat;
+        var starts = pat.StartsWith('*');
+        var ends = pat.EndsWith('*');
+        return (starts, ends) switch
+        {
+            (true, true) => pat.Length <= 2 || value.Contains(pat[1..^1], StringComparison.Ordinal),
+            (false, true) => value.StartsWith(pat[..^1], StringComparison.Ordinal),
+            (true, false) => value.EndsWith(pat[1..], StringComparison.Ordinal),
+            _ => value == pat,
+        };
     }
 
     public static DialectProfile Resolve(InstrumentKind kind, string? manufacturer = null, string? model = null)

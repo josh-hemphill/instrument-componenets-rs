@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "genericTemplates": [
+    { "profileId": "generic_dmm", "key": "measure_voltage_dc", "command": ":MEAS:VOLT:DC?" },
+    { "profileId": "generic_dmm", "key": "fetch", "command": "FETC?" },
+    { "profileId": "generic_scope", "key": "set_timebase_scale", "command": ":TIMebase:SCALe {seconds_per_div}" },
+    { "profileId": "generic_scope", "key": "waveform_data", "command": ":WAVeform:DATA?" },
+    { "profileId": "generic_pwrmeter", "key": "fetch", "command": "FETC?" },
+    { "profileId": "generic_pwrmeter", "key": "read", "command": "READ?" },
+    { "profileId": "generic_specan", "key": "trace_data", "command": ":TRAC:DATA? TRACE1" },
+    { "profileId": "generic_specan", "key": "single_sweep", "command": ":INIT:IMM" },
+    { "profileId": "generic_specan", "key": "marker_peak", "command": ":CALC:MARK:MAX" },
+    { "profileId": "generic_counter", "key": "measure_frequency", "command": ":MEASure:FREQuency?" },
+    { "profileId": "generic_switch", "key": "is_closed", "command": ":ROUTe:CLOS? (@({ch1},{ch2}))" }
+  ],
+  "dialectResolve": [
+    {
+      "id": "generic-specan",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": null,
+      "model": null,
+      "expectedProfile": "generic_specan"
+    },
+    {
+      "id": "keysight-xseries-n9010b",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": "Keysight Technologies",
+      "model": "N9010B",
+      "expectedProfile": "keysight_xseries"
+    },
+    {
+      "id": "rigol-dsa815",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": "Rigol Technologies",
+      "model": "DSA815",
+      "expectedProfile": "rigol_dsa"
+    },
+    {
+      "id": "generic-pwrmeter",
+      "kind": "PowerMeter",
+      "manufacturer": "Acme",
+      "model": "PM1",
+      "expectedProfile": "generic_pwrmeter"
+    },
+    {
+      "id": "keysight-sensor-u2001a",
+      "kind": "PowerMeter",
+      "manufacturer": "Keysight Technologies",
+      "model": "U2001A",
+      "expectedProfile": "keysight_sensor"
+    },
+    {
+      "id": "generic-dmm",
+      "kind": "Dmm",
+      "manufacturer": "Keysight Technologies",
+      "model": "34461A",
+      "expectedProfile": "generic_dmm"
+    }
+  ],
+  "dialectCommands": [
+    {
+      "id": "generic-specan-trace",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": null,
+      "model": null,
+      "key": "trace_data",
+      "command": ":TRAC:DATA? TRACE1"
+    },
+    {
+      "id": "keysight-xseries-trace",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": "Keysight Technologies",
+      "model": "N9010B",
+      "key": "trace_data",
+      "command": ":TRAC:DATA? TRACE1"
+    },
+    {
+      "id": "rigol-dsa-trace",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": "Rigol Technologies",
+      "model": "DSA815",
+      "key": "trace_data",
+      "command": ":TRAC? TRACE1"
+    },
+    {
+      "id": "generic-specan-single",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": null,
+      "model": null,
+      "key": "single_sweep",
+      "command": ":INIT:IMM"
+    },
+    {
+      "id": "rigol-dsa-single",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": "Rigol Technologies",
+      "model": "DSA815",
+      "key": "single_sweep",
+      "command": ":INIT"
+    },
+    {
+      "id": "keysight-sensor-fetch",
+      "kind": "PowerMeter",
+      "manufacturer": "Keysight Technologies",
+      "model": "U2001A",
+      "key": "fetch",
+      "command": "FETC?"
+    },
+    {
+      "id": "generic-pwrmeter-read",
+      "kind": "PowerMeter",
+      "manufacturer": null,
+      "model": null,
+      "key": "read",
+      "command": "READ?"
+    }
+  ],
+  "formattedCommands": [
+    {
+      "id": "specan-center-generic",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": null,
+      "model": null,
+      "key": "center_frequency",
+      "vars": { "hz": "1000000000" },
+      "command": ":FREQ:CENT 1000000000"
+    },
+    {
+      "id": "specan-sweep-off",
+      "kind": "SpectrumAnalyzer",
+      "manufacturer": "Rigol Technologies",
+      "model": "DSA815",
+      "key": "sweep_continuous",
+      "vars": { "state": "OFF" },
+      "command": ":INIT:CONT OFF"
+    },
+    {
+      "id": "pwrmeter-unit-dbm",
+      "kind": "PowerMeter",
+      "manufacturer": "Keysight Technologies",
+      "model": "U2001A",
+      "key": "unit",
+      "vars": { "unit": "DBM" },
+      "command": ":UNIT:POW DBM"
+    }
+  ]
+}
