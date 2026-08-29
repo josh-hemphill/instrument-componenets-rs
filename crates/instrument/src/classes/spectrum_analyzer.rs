@@ -1,8 +1,7 @@
-use instrument_core::dialect::resolve_dialect;
-use instrument_core::error::{Error, Result};
+use super::dialect_io;
+use instrument_core::error::Result;
 use instrument_core::kind::InstrumentKind;
 use instrument_core::scpi::{parse_f64_csv, ScpiSession};
-use instrument_core::scpi_commands;
 use instrument_core::InstrumentSession;
 
 /// Spectrum analyzer session view.
@@ -24,130 +23,82 @@ impl SpectrumAnalyzer {
     }
 
     fn dialect(&self) -> &'static instrument_core::DialectProfile {
-        let identity = self.session.identity();
-        resolve_dialect(
-            InstrumentKind::SpectrumAnalyzer,
-            identity.manufacturer.as_deref(),
-            identity.model.as_deref(),
-        )
+        self.session.dialect_for(InstrumentKind::SpectrumAnalyzer)
     }
 
     fn write_dialect(&mut self, key: &str, vars: &[(&str, String)]) -> Result<()> {
-        let cmd = self
-            .dialect()
-            .format_command(key, vars)
-            .ok_or_else(|| Error::Unsupported("spectrum analyzer dialect missing command"))?;
+        let cmd = dialect_io::formatted(self.dialect(), key, vars)?;
         self.session.scpi_mut().write(&cmd)
     }
 
     fn query_dialect(&mut self, key: &str) -> Result<String> {
-        let cmd = self
-            .dialect()
-            .command(key)
-            .ok_or_else(|| Error::Unsupported("spectrum analyzer dialect missing command"))?;
+        let cmd = dialect_io::command(self.dialect(), key)?;
         self.session.scpi_mut().query(cmd)
     }
 
     /// Sets center frequency in hertz (SI).
     pub fn set_center_frequency(&mut self, hz: f64) -> Result<()> {
-        self.session
-            .scpi_mut()
-            .write(&scpi_commands::specan_center_frequency(hz))
+        self.write_dialect("center_frequency", &[("hz", dialect_io::f64_text(hz))])
     }
 
     /// Sets frequency span in hertz (SI).
     pub fn set_span(&mut self, hz: f64) -> Result<()> {
-        self.session
-            .scpi_mut()
-            .write(&scpi_commands::specan_span(hz))
+        self.write_dialect("span", &[("hz", dialect_io::f64_text(hz))])
     }
 
     /// Sets resolution bandwidth in hertz (SI).
     pub fn set_rbw(&mut self, hz: f64) -> Result<()> {
-        self.session
-            .scpi_mut()
-            .write(&scpi_commands::specan_rbw(hz))
+        self.write_dialect("rbw", &[("hz", dialect_io::f64_text(hz))])
     }
 
     /// Sets video bandwidth in hertz (SI).
     pub fn set_vbw(&mut self, hz: f64) -> Result<()> {
-        self.session
-            .scpi_mut()
-            .write(&scpi_commands::specan_vbw(hz))
+        self.write_dialect("vbw", &[("hz", dialect_io::f64_text(hz))])
     }
 
     /// Sets reference level in dBm.
     pub fn set_ref_level(&mut self, dbm: f64) -> Result<()> {
-        self.session
-            .scpi_mut()
-            .write(&scpi_commands::specan_ref_level(dbm))
+        self.write_dialect("ref_level", &[("dbm", dialect_io::f64_text(dbm))])
     }
 
     /// Fetches TRACE1 as ASCII comma-separated amplitude samples.
     pub fn fetch_trace_ascii(&mut self) -> Result<Vec<f64>> {
-        let resp = match self.query_dialect("trace_data") {
-            Ok(r) => r,
-            Err(_) => self
-                .session
-                .scpi_mut()
-                .query(scpi_commands::SPECAN_TRACE_DATA)?,
-        };
-        parse_f64_csv(&resp)
+        parse_f64_csv(&self.query_dialect("trace_data")?)
     }
 
     /// Moves marker to peak.
     pub fn marker_peak(&mut self) -> Result<()> {
-        let cmd = self
-            .dialect()
-            .command("marker_peak")
-            .unwrap_or(scpi_commands::SPECAN_MARKER_PEAK);
+        let cmd = dialect_io::command(self.dialect(), "marker_peak")?;
         self.session.scpi_mut().write(cmd)
     }
 
     /// Reads marker X (typically frequency in Hz).
     pub fn marker_x(&mut self) -> Result<f64> {
-        let cmd = self
-            .dialect()
-            .command("marker_x")
-            .unwrap_or(scpi_commands::SPECAN_MARKER_X);
-        let resp = self.session.scpi_mut().query(cmd)?;
+        let resp = self.query_dialect("marker_x")?;
         ScpiSession::parse_f64(&resp)
     }
 
     /// Reads marker Y (typically amplitude in dBm).
     pub fn marker_y(&mut self) -> Result<f64> {
-        let cmd = self
-            .dialect()
-            .command("marker_y")
-            .unwrap_or(scpi_commands::SPECAN_MARKER_Y);
-        let resp = self.session.scpi_mut().query(cmd)?;
+        let resp = self.query_dialect("marker_y")?;
         ScpiSession::parse_f64(&resp)
     }
 
     /// Enables or disables continuous sweep.
     pub fn sweep_continuous(&mut self, enabled: bool) -> Result<()> {
         let state = if enabled { "ON" } else { "OFF" };
-        self.session
-            .scpi_mut()
-            .write(&scpi_commands::specan_sweep_continuous(state))
+        self.write_dialect("sweep_continuous", &[("state", state.into())])
     }
 
     /// Triggers a single sweep.
     pub fn single_sweep(&mut self) -> Result<()> {
-        let cmd = self
-            .dialect()
-            .command("single_sweep")
-            .unwrap_or(scpi_commands::SPECAN_SINGLE_SWEEP);
+        let cmd = dialect_io::command(self.dialect(), "single_sweep")?;
         self.session.scpi_mut().write(cmd)
     }
 
     /// Waits for operation complete (*OPC?).
     pub fn wait_opc(&mut self) -> Result<()> {
-        let cmd = self
-            .dialect()
-            .command("wait_opc")
-            .unwrap_or(scpi_commands::SPECAN_WAIT_OPC);
-        let _ = self.session.scpi_mut().query(cmd)?;
+        let _ = self.query_dialect("wait_opc")?;
         Ok(())
     }
 

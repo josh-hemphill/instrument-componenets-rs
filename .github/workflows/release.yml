@@ -13,9 +13,13 @@ jobs:
     name: CI gate
     uses: ./.github/workflows/ci.yml
 
+  dotnet:
+    name: .NET gate
+    uses: ./.github/workflows/dotnet.yml
+
   publish:
     name: Publish to crates.io
-    needs: ci
+    needs: [ci, dotnet]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +37,7 @@ jobs:
 
   nuget:
     name: Publish to NuGet
-    needs: ci
+    needs: [ci, dotnet]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

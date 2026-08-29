@@ -1,8 +1,8 @@
 # .NET getting started
 
-Native C# port of instrument-components — discover and drive SCPI instruments **without waiting for a vendor IVI.NET class driver**.
+C# implementation of instrument-components — discover and drive SCPI instruments **without waiting for a vendor IVI.NET class driver**. Dual-native with the Rust crates; shared TOML is the contract.
 
-Unlike IVI Shared Components (contracts that vendors must implement per model), this library talks SCPI over VISA (or a mock), classifies devices from `*IDN?` / probes / a shared model registry, and exposes SI-unit typed classes (DMM, PSU, FGen, oscilloscope, switch, counter).
+Unlike IVI Shared Components (contracts that vendors must implement per model), this library talks SCPI over VISA (or a mock), classifies devices from `*IDN?` / probes / a shared model registry, and exposes SI-unit typed classes (DMM, PSU, FGen, oscilloscope, switch, counter, power meter, spectrum analyzer).
 
 Package publishing is deferred; use project references from this repo for now.
 
@@ -33,6 +33,8 @@ dotnet run --project examples/Discover
 ```bash
 dotnet run --project examples/AssignInstruments
 ```
+
+Other hardware examples: `examples/DmmMeasure`, `examples/ManualTcpip`, `examples/DiscoverAsync`.
 
 ## Library usage
 

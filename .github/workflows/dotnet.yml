@@ -3,20 +3,9 @@ name: .NET
 on:
   push:
     branches: [latest, main, master]
-    paths:
-      - 'dotnet/**'
-      - 'crates/instrument-core/data/**'
-      - 'tools/**'
-      - 'fixtures/**'
-      - '.github/workflows/dotnet.yml'
   pull_request:
     branches: [latest, main, master]
-    paths:
-      - 'dotnet/**'
-      - 'crates/instrument-core/data/**'
-      - 'tools/**'
-      - 'fixtures/**'
-      - '.github/workflows/dotnet.yml'
+  workflow_call:
 
 env:
   DOTNET_NOLOGO: true
@@ -49,6 +38,7 @@ jobs:
       - run: dotnet restore dotnet/InstrumentComponents.sln
       - run: dotnet build dotnet/InstrumentComponents.sln --no-restore -c Release
       - run: dotnet test dotnet/tests/InstrumentComponents.Tests/InstrumentComponents.Tests.csproj --no-build -c Release
+      - run: dotnet test dotnet/tests/InstrumentComponents.Visa.Tests/InstrumentComponents.Visa.Tests.csproj --no-build -c Release --filter "Category!=Hardware"
 
   build-visa-windows:
     name: Build VISA package (Windows)
@@ -60,6 +50,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - run: dotnet build dotnet/InstrumentComponents.sln -c Release
+      - run: dotnet test dotnet/tests/InstrumentComponents.Visa.Tests/InstrumentComponents.Visa.Tests.csproj -c Release --filter "Category!=Hardware" --no-build
 
   build-visa-linux:
     name: Build VISA package (Linux)

@@ -6,9 +6,9 @@ using Ivi.Visa;
 namespace InstrumentComponents.Visa;
 
 /// <summary>VISA instrument session transport (sync).</summary>
-public sealed class VisaTransport : TransportBase
+public sealed class VisaTransport : TransportBase, IDisposable
 {
-    private readonly IMessageBasedSession _session;
+    private IMessageBasedSession? _session;
     private readonly TransportIdentity _identity;
 
     public VisaTransport(IMessageBasedSession session, TransportIdentity? identity = null)
@@ -17,13 +17,14 @@ public sealed class VisaTransport : TransportBase
         _identity = identity ?? new TransportIdentity();
     }
 
-    public IMessageBasedSession Session => _session;
+    public IMessageBasedSession Session =>
+        _session ?? throw new TransportClosedException();
 
     public override void Write(ReadOnlySpan<byte> data)
     {
         try
         {
-            _session.RawIO.Write(data.ToArray());
+            Session.RawIO.Write(data.ToArray());
         }
         catch (IOTimeoutException)
         {
@@ -39,7 +40,7 @@ public sealed class VisaTransport : TransportBase
     {
         try
         {
-            var data = _session.RawIO.Read(buffer.Length);
+            var data = Session.RawIO.Read(buffer.Length);
             if (data.Length == 0)
                 throw new TransportClosedException();
             data.CopyTo(buffer);
@@ -63,7 +64,7 @@ public sealed class VisaTransport : TransportBase
     {
         try
         {
-            _session.Clear();
+            Session.Clear();
         }
         catch (Exception ex)
         {
@@ -75,7 +76,7 @@ public sealed class VisaTransport : TransportBase
     {
         try
         {
-            _session.TimeoutMilliseconds = (int)Math.Min(timeout.TotalMilliseconds, int.MaxValue);
+            Session.TimeoutMilliseconds = (int)Math.Min(timeout.TotalMilliseconds, int.MaxValue);
         }
         catch (Exception ex)
         {
@@ -83,9 +84,17 @@ public sealed class VisaTransport : TransportBase
         }
     }
 
-    public override void Reconnect() { }
+    public override void Reconnect() =>
+        throw new InstrumentUnsupportedException("reconnect");
 
     public override TransportIdentity Identity => _identity;
 
-    public override void Configure(ConnectOptions opts) => SetReadTimeout(opts.ReadTimeout);
+    public override void Configure(ConnectOptions opts) => SetReadTimeout(opts.IoTimeout());
+
+    public void Dispose()
+    {
+        _session?.Dispose();
+        _session = null;
+        GC.SuppressFinalize(this);
+    }
 }

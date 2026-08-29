@@ -33,7 +33,7 @@ pub trait Transport: Send {
 
     /// Applies connect options (timeouts, etc.).
     fn configure(&mut self, opts: &ConnectOptions) -> Result<()> {
-        self.set_read_timeout(opts.read_timeout)
+        self.set_read_timeout(opts.io_timeout())
     }
 }
 

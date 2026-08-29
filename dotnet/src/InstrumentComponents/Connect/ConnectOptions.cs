@@ -14,6 +14,9 @@ public sealed class ConnectOptions
     public TimeSpan RetryBackoff { get; set; } = TimeSpan.FromMilliseconds(100);
     public bool ReconnectOnFailure { get; set; } = true;
 
+    /// <summary>Single I/O timeout for backends (VISA) that cannot split read vs write.</summary>
+    public TimeSpan IoTimeout() => PerOpTimeout ?? (ReadTimeout > WriteTimeout ? ReadTimeout : WriteTimeout);
+
     public ConnectOptions WithReadTimeout(TimeSpan timeout)
     {
         ReadTimeout = timeout;

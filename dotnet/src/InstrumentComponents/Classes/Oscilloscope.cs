@@ -73,6 +73,12 @@ public sealed class Oscilloscope
         var fields = preamble.Split(',');
         if (fields.Length < 5)
             return null;
-        return double.TryParse(fields[4].Trim(), out var value) ? value : null;
+        return double.TryParse(
+            fields[4].Trim(),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var value)
+            ? value
+            : null;
     }
 }

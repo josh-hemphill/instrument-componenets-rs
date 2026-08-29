@@ -8,9 +8,9 @@ Quick reference for the main public types. Full rustdoc on [docs.rs](https://doc
 use instrument::prelude::*;
 ```
 
-Re-exports: `Discovery`, `DeviceCatalog`, `DeviceRef`, `Dmm`, `DcPowerSupply`, `FunctionGenerator`, `Oscilloscope`, `Switch`, `Counter`, `InstrumentKind`, `ProbePolicy`, `ScriptedFixture`, `Error`, `Result`, and more.
+Re-exports: `Discovery`, `DeviceCatalog`, `DeviceRef`, `Dmm`, `DcPowerSupply`, `FunctionGenerator`, `Oscilloscope`, `Switch`, `Counter`, `PowerMeter`, `SpectrumAnalyzer`, `InstrumentKind`, `ProbePolicy`, `ScriptedFixture`, `Error`, `Result`, and more.
 
-With `tokio`: `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`, `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`, `AsyncScpiSession`, `AsyncInstrumentSession`.
+With `tokio`: `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`, `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`, `AsyncPowerMeter`, `AsyncSpectrumAnalyzer`, `AsyncScpiSession`, `AsyncInstrumentSession`.
 
 ## Discovery and catalog
 
@@ -46,7 +46,9 @@ With `tokio`: `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`, `AsyncDm
 | `FunctionGenerator` | `set_waveform`, `set_frequency`, `set_amplitude`, `enable_output` |
 | `Oscilloscope` | `set_timebase_scale`, `set_channel_scale`, `run`, `stop`, `capture_voltage_trace` |
 | `Switch` | `close_route`, `open_route`, `is_closed`, `open_all` |
-| `Counter` | `measure_frequency`, `measure_period`, `reset_totalize`, `read_totalize` |
+| `Counter` | `measure_frequency`, `measure_period`, `reset_totalize`, `read_totalize`, `set_gate_time` |
+| `PowerMeter` | `configure_measurement`, `read`, `initiate`, `fetch` |
+| `SpectrumAnalyzer` | `set_center_frequency`, `set_span`, `fetch_trace_ascii`, `marker_peak` |
 
 Async counterparts (`AsyncDmm`, `AsyncOscilloscope`, etc.) expose the same methods with `.await`.
 

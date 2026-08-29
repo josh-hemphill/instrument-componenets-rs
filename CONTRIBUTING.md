@@ -1,12 +1,14 @@
 # Contributing
 
-Thank you for contributing to instrument-components-rs.
+Thank you for contributing to instrument-components.
+
+Dual-native work (Rust + C#) follows [docs/dual-native-plan.md](docs/dual-native-plan.md). Shared TOML is the contract; do not land behavior in only one language.
 
 ## Development setup
 
 ```bash
-git clone https://github.com/josh-hemphill/instrument-componenets-rs.git
-cd instrument-componenets-rs
+git clone https://github.com/josh-hemphill/instrument-components.git
+cd instrument-components
 cargo test --workspace --no-default-features
 ```
 
@@ -29,8 +31,10 @@ cargo test --workspace --no-default-features
 | `cargo check -p instrument-components --features visa,tokio` | Async + VISA compiles |
 | `cargo clippy -p instrument-core --features async -- -D warnings` | Async clippy |
 | `cargo check -p instrument-visa --features cross-compile --target x86_64-pc-windows-gnu` | Cross-compile repr check |
+| `dotnet test dotnet/tests/InstrumentComponents.Tests` | C# mock path |
+| `dotnet test dotnet/tests/InstrumentComponents.Visa.Tests --filter "Category!=Hardware"` | C# VISA package (no instruments) |
 
-CI does **not** link against VISA (no NI-VISA on runners). Hardware verification is local.
+CI does **not** link against VISA (no NI-VISA on GitHub-hosted runners). Hardware verification is local. The release workflow requires **both** the Rust `CI` and `.NET` workflows.
 
 ## Code style
 
@@ -67,6 +71,8 @@ Registry entries are **hints only** — capability probes and `*IDN?` can overri
 
 ## Shared SCPI / probe tables
 
+Shared TOML is the source of truth. Never hand-edit generated files (`scpi_commands.rs`, `ScpiCommands.cs`, `dialect.rs`, `DialectRegistry.cs`, `probes.rs`, `CapabilityProbes.cs`, `model_registry.json`).
+
 Edit TOML under `crates/instrument-core/data/`, then:
 
 ```bash
@@ -75,7 +81,13 @@ deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-dialects.ts
 deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
 ```
 
-This regenerates Rust `probes.rs` / `scpi_commands.rs` / `dialect.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs` / `DialectRegistry.cs`. Codegen runs `rustfmt` on the Rust outputs. CI fails on drift.
+This regenerates Rust `probes.rs` / `scpi_commands.rs` / `dialect.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs` / `DialectRegistry.cs`. Codegen runs `rustfmt` on the Rust outputs and fails if a `generic_*` dialect profile drifts from `scpi_commands.toml` (`spec/generic-scpi-map.json`). CI fails on drift.
+
+Typed classes that have a dialect profile (spectrum analyzer, power meter) emit the resolved dialect command, not a hardcoded generic string.
+
+## Golden vectors
+
+New class methods that emit SCPI need a row in `spec/scpi-vectors.json` (exact command string) or a shared transcript under `fixtures/` that drives the typed class and asserts **values**. Classifier changes need a row in `spec/classifier-cases.json`. Both languages load the same files — see `spec/README.md`.
 
 ## Pull requests
 
@@ -91,6 +103,6 @@ Publish order on crates.io:
 2. `instrument-visa`
 3. `instrument-components`
 
-Set `CARGO_REGISTRY_TOKEN` in GitHub repository secrets. Tag `v*` triggers the release workflow.
+Set `CARGO_REGISTRY_TOKEN` and `NUGET_API_KEY` in GitHub repository secrets. Tag `v*` triggers the release workflow, which waits on Rust **and** .NET CI.
 
 Pre-first-publish: `cargo publish -p instrument-core --dry-run --allow-dirty` validates packaging. Dependent crates require `instrument-core` on crates.io before their dry-run verify step succeeds.

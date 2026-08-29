@@ -1,16 +1,18 @@
 using InstrumentComponents.Address;
 using InstrumentComponents.Connect;
 using InstrumentComponents.Diagnostics;
+using InstrumentComponents.Dialects;
 using InstrumentComponents.Errors;
 using InstrumentComponents.Identity;
 using InstrumentComponents.Ieee4882;
+using InstrumentComponents.Kind;
 using InstrumentComponents.Scpi;
 using InstrumentComponents.Transport;
 
 namespace InstrumentComponents.Session;
 
 /// <summary>Async instrument session with SCPI and cached identity.</summary>
-public sealed class AsyncInstrumentSession
+public sealed class AsyncInstrumentSession : IDisposable
 {
     public ResourceAddress Address { get; }
     public AsyncScpiSession Scpi { get; }
@@ -39,6 +41,10 @@ public sealed class AsyncInstrumentSession
 
     public string AddressStr => Address.Raw;
     public DeviceIdentity Identity => _identity;
+
+    /// <summary>Resolves the dialect profile for <paramref name="kind"/> using this session's identity.</summary>
+    public DialectProfile DialectFor(InstrumentKind kind) =>
+        DialectRegistry.Resolve(kind, _identity.Manufacturer, _identity.Model);
 
     public async Task<Idn> IdnAsync(CancellationToken cancellationToken = default) =>
         await ScpiCommAsync("idn", async scpi =>
@@ -80,6 +86,8 @@ public sealed class AsyncInstrumentSession
             throw new CommunicationException(Address.Raw, command, 1, ex);
         }
     }
+
+    public void Dispose() => Scpi.Dispose();
 }
 
 /// <summary>Async session pool with lock.</summary>

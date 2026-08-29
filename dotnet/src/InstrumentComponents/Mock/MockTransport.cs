@@ -108,10 +108,14 @@ public sealed class MockTransport : TransportBase, IAsyncTransport
     public ValueTask SetReadTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken = default) =>
         ValueTask.CompletedTask;
 
-    public ValueTask ReconnectAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    public ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
+    {
+        Reconnect();
+        return ValueTask.CompletedTask;
+    }
 
     public ValueTask ConfigureAsync(ConnectOptions opts, CancellationToken cancellationToken = default) =>
-        SetReadTimeoutAsync(opts.ReadTimeout, cancellationToken);
+        SetReadTimeoutAsync(opts.IoTimeout(), cancellationToken);
 
     private static string NormalizeCmd(string s) => s.Trim().ToUpperInvariant();
 }

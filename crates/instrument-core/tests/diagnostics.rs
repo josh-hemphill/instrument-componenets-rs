@@ -56,4 +56,8 @@ fn diagnostics_records_failures_and_observer_events() {
 
     let recorded = events.lock().unwrap();
     assert!(recorded.iter().any(|e| e.kind == CommsEventKind::Timeout));
+    assert!(
+        recorded.iter().all(|e| e.kind != CommsEventKind::Reconnect),
+        "unsupported reconnect must not be recorded as success"
+    );
 }

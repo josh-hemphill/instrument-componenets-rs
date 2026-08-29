@@ -4,8 +4,7 @@ namespace InstrumentComponents.Tests;
 
 public class TranscriptConformanceTests
 {
-    private static string FixturePath(string name) => Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "fixtures", name));
+    private static string FixturePath(string name) => RepoFiles.Fixture(name);
 
     [Theory]
     [InlineData("smu2602.json", 2)]

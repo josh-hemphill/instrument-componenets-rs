@@ -5,7 +5,7 @@ High-level control for VISA / SCPI instruments in **Rust** and **C#**: auto-disc
 ## What you get
 
 - Auto-discovery of USB, GPIB, and serial VISA resources
-- Typed instrument classes with SI units (V, A, Hz, s): DMM, DC power supply, function generator, oscilloscope, switch, counter
+- Typed instrument classes with SI units (V, A, Hz, s): DMM, DC power supply, function generator, oscilloscope, switch, counter, power meter, spectrum analyzer
 - Mock transport for hardware-free CI
 - Stable `DeviceId` for instrument replacement workflows
 - Opt-in async APIs (true async in Rust via visa-rs; sync bridge in C# today)
@@ -56,6 +56,6 @@ High-level control for VISA / SCPI instruments in **Rust** and **C#**: auto-disc
 
 ## Source & API reference
 
-- GitHub: [josh-hemphill/instrument-componenets-rs](https://github.com/josh-hemphill/instrument-componenets-rs)
+- GitHub: [josh-hemphill/instrument-components](https://github.com/josh-hemphill/instrument-components)
 - Rust API docs: [docs.rs/instrument-components](https://docs.rs/instrument-components) (after publish)
 - Agent-oriented notes (roadmap, parity) live in the repo `docs/` folder

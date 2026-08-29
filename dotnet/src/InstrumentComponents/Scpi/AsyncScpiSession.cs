@@ -8,7 +8,7 @@ using InstrumentComponents.Transport;
 namespace InstrumentComponents.Scpi;
 
 /// <summary>Async SCPI session over a transport.</summary>
-public sealed class AsyncScpiSession
+public sealed class AsyncScpiSession : IDisposable
 {
     private readonly IAsyncTransport _transport;
     private readonly ConnectOptions _opts;
@@ -24,7 +24,14 @@ public sealed class AsyncScpiSession
         CancellationToken cancellationToken = default)
     {
         await transport.ConfigureAsync(opts, cancellationToken).ConfigureAwait(false);
-        return new AsyncScpiSession(transport, opts);
+        var session = new AsyncScpiSession(transport, opts);
+        if (opts.ResetOnConnect)
+        {
+            try { await new global::InstrumentComponents.Ieee4882.AsyncIeee4882(session).ClearStatusAsync(cancellationToken).ConfigureAwait(false); } catch { }
+            try { await new global::InstrumentComponents.Ieee4882.AsyncIeee4882(session).ResetAsync(cancellationToken).ConfigureAwait(false); } catch { }
+            await session.RestoreIoTimeoutAsync().ConfigureAwait(false);
+        }
+        return session;
     }
 
     private AsyncScpiSession(IAsyncTransport transport, ConnectOptions opts)
@@ -64,6 +71,7 @@ public sealed class AsyncScpiSession
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
+            await RestoreIoTimeoutAsync().ConfigureAwait(false);
         }
         _readBuffer.Clear();
     }
@@ -103,9 +111,7 @@ public sealed class AsyncScpiSession
             {
                 RecordFailure(CommsEventKind.Timeout, command, attempts, started, "write timeout");
                 if (_opts.ReconnectOnFailure)
-                {
-                    try { await _transport.ReconnectAsync(cancellationToken).ConfigureAwait(false); RecordReconnect(); } catch { }
-                }
+                    await TryReconnectAsync(cancellationToken).ConfigureAwait(false);
                 await Task.Delay(_opts.RetryBackoff, cancellationToken).ConfigureAwait(false);
             }
             catch (InstrumentTimeoutException)
@@ -163,9 +169,7 @@ public sealed class AsyncScpiSession
                         catch (InstrumentTimeoutException) { }
                     }
                     if (_opts.ReconnectOnFailure)
-                    {
-                        try { await _transport.ReconnectAsync(cancellationToken).ConfigureAwait(false); RecordReconnect(); } catch { }
-                    }
+                        await TryReconnectAsync(cancellationToken).ConfigureAwait(false);
                     RecordFailure(CommsEventKind.Timeout, command, 1, started, "read timeout");
                     throw;
                 }
@@ -179,6 +183,7 @@ public sealed class AsyncScpiSession
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
+            await RestoreIoTimeoutAsync().ConfigureAwait(false);
         }
     }
 
@@ -191,7 +196,33 @@ public sealed class AsyncScpiSession
     private void RecordReconnect() =>
         _diagnostics?.RecordSuccess(CommsEventKind.Reconnect, null, 1, TimeSpan.Zero);
 
+    private async Task TryReconnectAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _transport.ReconnectAsync(cancellationToken).ConfigureAwait(false);
+            RecordReconnect();
+        }
+        catch
+        {
+            // Unsupported or failed reconnect must not look like success.
+        }
+    }
+
     private TimeSpan EffectiveReadTimeout() => _opts.PerOpTimeout ?? _opts.ReadTimeout;
+
+    /// Restores the configured I/O timeout without the caller token; swallows restore errors.
+    private async ValueTask RestoreIoTimeoutAsync()
+    {
+        try
+        {
+            await _transport.SetReadTimeoutAsync(_opts.IoTimeout(), CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Best-effort: do not hide the original I/O result or fail session create.
+        }
+    }
 
     public async Task<bool> ProbeSystErrAsync(CancellationToken cancellationToken = default)
     {
@@ -237,5 +268,12 @@ public sealed class AsyncScpiSession
             if (errors.Count > 50) break;
         }
         return errors;
+    }
+
+    public void Dispose()
+    {
+        if (_transport is IDisposable disposable)
+            disposable.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

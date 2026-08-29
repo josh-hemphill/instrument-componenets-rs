@@ -26,5 +26,5 @@ public abstract class TransportBase : ITransport
 
     public virtual TransportIdentity Identity => new();
 
-    public virtual void Configure(ConnectOptions opts) => SetReadTimeout(opts.ReadTimeout);
+    public virtual void Configure(ConnectOptions opts) => SetReadTimeout(opts.IoTimeout());
 }

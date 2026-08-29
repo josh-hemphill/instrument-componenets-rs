@@ -1,4 +1,6 @@
-# Getting started
+# Getting started (Rust)
+
+Contributor-oriented Rust walkthrough. Dual-language published docs: [docs-site getting started](https://josh-hemphill.github.io/instrument-components/getting-started/). C#: [dotnet-getting-started.md](dotnet-getting-started.md).
 
 ## Prerequisites
 
@@ -105,7 +107,7 @@ Add `features = ["tokio"]` (and `tokio` runtime dep). Use `AsyncDeviceCatalog`, 
 
 ```toml
 [dependencies]
-instrument-components = { version = "0.2", default-features = false, features = ["tokio"] }
+instrument-components = { version = "0.1", default-features = false, features = ["tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 

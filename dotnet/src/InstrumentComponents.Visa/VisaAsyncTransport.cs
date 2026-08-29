@@ -7,7 +7,7 @@ namespace InstrumentComponents.Visa;
 /// VISA transport exposed as async via sync bridge (thread-pool offload).
 /// Not vendor APM — see docs/visa-async-csharp.md. Cancellation does not abort in-flight native VISA calls.
 /// </summary>
-public sealed class VisaAsyncTransport : IAsyncTransport
+public sealed class VisaAsyncTransport : IAsyncTransport, IDisposable
 {
     private readonly SyncAsAsyncTransport<VisaTransport> _inner;
 
@@ -34,4 +34,10 @@ public sealed class VisaAsyncTransport : IAsyncTransport
 
     public ValueTask ConfigureAsync(ConnectOptions opts, CancellationToken cancellationToken = default) =>
         _inner.ConfigureAsync(opts, cancellationToken);
+
+    public void Dispose()
+    {
+        _inner.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }

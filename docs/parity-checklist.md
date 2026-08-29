@@ -6,16 +6,19 @@ Shared scenarios both implementations must cover. Update this table when adding 
 |---|---|---|---|
 | Mock DMM measure | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests.FixtureDmmMeasure` | |
 | Async mock DMM measure | `crates/instrument/tests/async_mock_catalog.rs` | `MockCatalogTests.AsyncFixtureDmmMeasure` | |
+| Multi-session same device | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests.MultiSessionSameDevice` | |
 | Static discovery classify | `crates/instrument/tests/discovery_static.rs` | `DiscoveryStaticTests` | |
 | Async static discovery | `crates/instrument/tests/async_discovery_static.rs` | `AsyncDiscoveryStaticTests` | |
 | SCPI query retry after timeout | `crates/instrument-core/tests/reliability.rs` | `ReliabilityTests` | |
 | Async SCPI query retry | `crates/instrument-core/tests/async_reliability.rs` | `AsyncReliabilityTests` | |
 | Diagnostics observer + health | `crates/instrument-core/tests/diagnostics.rs` | `DiagnosticsTests` | |
 | Async diagnostics | `crates/instrument-core/tests/async_diagnostics.rs` | `AsyncDiagnosticsTests` | |
-| Transcript `smu2602` | `crates/instrument-core/tests/transcript.rs` | `TranscriptConformanceTests` | `fixtures/smu2602.json` |
-| Transcript scope | same | same | `fixtures/scope_ds1054z.json` |
-| Transcript switch | same | same | `fixtures/switch_34970a.json` |
-| Transcript counter | same | same | `fixtures/counter_53230a.json` |
+| Transcript `smu2602` | `crates/instrument/tests/transcript_behavior.rs` | `TranscriptBehaviorTests` | `fixtures/smu2602.json` — asserts 3.3 V |
+| Transcript scope | same | same | `fixtures/scope_ds1054z.json` — asserts samples + interval |
+| Transcript switch | same | same | `fixtures/switch_34970a.json` — asserts closed |
+| Transcript counter | same | same | `fixtures/counter_53230a.json` — asserts 1000 Hz |
+| Shared SCPI vectors | `crates/instrument-core/tests/shared_contracts.rs` | `SharedContractTests` | `spec/scpi-vectors.json` |
+| Shared classifier cases | same | same | `spec/classifier-cases.json` |
 | New kinds (scope/switch/counter) | `crates/instrument/tests/new_instrument_kinds.rs` | `NewInstrumentKindTests` | |
 | Class depth Dmm/Psu | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests` | AC/Ω/temp, INIT/FETC, OVP/sense |
 | Class depth Scope/Fgen | `new_instrument_kinds.rs` | `NewInstrumentKindTests` | Trigger/measure, burst/duty |
@@ -27,6 +30,9 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | Mock example runnable | `examples/mock_fixture_ci` | `dotnet/examples/MockFixtureCi` | |
 | Async mock example | `examples/mock_fixture_ci_async` | `dotnet/examples/MockFixtureCiAsync` | |
 | Discover example | `examples/discover` | `dotnet/examples/Discover` | Needs VISA |
+| DMM measure example | `examples/dmm_measure` | `dotnet/examples/DmmMeasure` | Needs VISA |
+| Manual TCPIP example | `examples/manual_tcpip` | `dotnet/examples/ManualTcpip` | Needs VISA |
+| Async discover example | `examples/discover_async` | `dotnet/examples/DiscoverAsync` | Needs VISA |
 
 ## Known intentional differences
 

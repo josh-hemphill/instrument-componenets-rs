@@ -45,6 +45,14 @@ public sealed class DeviceCatalog
         }
     }
 
+    public DeviceCatalog WithConnectOptions(ConnectOptions opts)
+    {
+        _connectOptions = opts;
+        return this;
+    }
+
+    public ConnectOptions ConnectOptions => _connectOptions;
+
     public static DeviceCatalog FromDevices(ISessionOpener opener, IReadOnlyList<DiscoveredDevice> devices) =>
         new(opener, devices.ToList(), null);
 

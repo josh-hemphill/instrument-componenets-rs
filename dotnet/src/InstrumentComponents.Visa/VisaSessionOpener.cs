@@ -12,11 +12,12 @@ public sealed class VisaSessionOpener : ISessionOpener, IAsyncSessionOpener
 {
     public ITransport Open(ResourceAddress address, ConnectOptions opts)
     {
+        var accessMode = MapAccessMode(opts.AccessMode);
         try
         {
             var session = (IMessageBasedSession)GlobalResourceManager.Open(
                 address.Raw,
-                MapAccessMode(opts.AccessMode),
+                accessMode,
                 (int)opts.OpenTimeout.TotalMilliseconds);
             return new VisaTransport(session);
         }
@@ -38,6 +39,11 @@ public sealed class VisaSessionOpener : ISessionOpener, IAsyncSessionOpener
         return ValueTask.FromResult<IAsyncTransport>(transport);
     }
 
-    private static AccessModes MapAccessMode(AccessMode mode) =>
-        mode.ExclusiveLock ? AccessModes.ExclusiveLock : AccessModes.None;
+    internal static AccessModes MapAccessMode(AccessMode mode)
+    {
+        if (mode.SharedLock)
+            throw new InstrumentUnsupportedException(
+                "Ivi.Visa AccessModes does not support shared lock");
+        return mode.ExclusiveLock ? AccessModes.ExclusiveLock : AccessModes.None;
+    }
 }

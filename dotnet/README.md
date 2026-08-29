@@ -1,6 +1,6 @@
 # InstrumentComponents (.NET)
 
-Native C# port of [instrument-components-rs](../README.md) over vendor-neutral [IviFoundation.Visa](https://www.nuget.org/packages/IviFoundation.Visa).
+C# packages for [instrument-components](../README.md) over vendor-neutral [IviFoundation.Visa](https://www.nuget.org/packages/IviFoundation.Visa). Same discovery, SCPI, and typed-class contracts as the Rust crates.
 
 See [docs/dotnet-getting-started.md](../docs/dotnet-getting-started.md) for the IVI-alternative pitch and full walkthrough.
 
@@ -8,7 +8,7 @@ See [docs/dotnet-getting-started.md](../docs/dotnet-getting-started.md) for the 
 
 | Package | Role |
 |---|---|
-| `InstrumentComponents` | Discovery, typed classes (DMM, PSU, FGen, oscilloscope, switch, counter), mocks — no VISA runtime (`net8.0`) |
+| `InstrumentComponents` | Discovery, typed classes (DMM, PSU, FGen, oscilloscope, switch, counter, power meter, spectrum analyzer), mocks — no VISA runtime (`net8.0`) |
 | `InstrumentComponents.Visa` | VISA transport via IviFoundation.Visa (`net8.0`; Windows **or** Linux with a vendor VISA install) |
 
 ## Mock quick start (CI, no VISA)
@@ -70,6 +70,9 @@ var volts = await dmm.MeasureVoltageDcAsync();
 | `examples/MockFixtureCi` | No |
 | `examples/MockFixtureCiAsync` | No |
 | `examples/Discover` | Yes |
+| `examples/DiscoverAsync` | Yes |
+| `examples/DmmMeasure` | Yes |
+| `examples/ManualTcpip` | Yes |
 | `examples/AssignInstruments` | Yes |
 
 ## Testing

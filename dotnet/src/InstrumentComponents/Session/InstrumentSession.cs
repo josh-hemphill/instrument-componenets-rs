@@ -1,6 +1,7 @@
 using InstrumentComponents.Address;
 using InstrumentComponents.Connect;
 using InstrumentComponents.Diagnostics;
+using InstrumentComponents.Dialects;
 using InstrumentComponents.Errors;
 using InstrumentComponents.Identity;
 using InstrumentComponents.Ieee4882;
@@ -11,7 +12,7 @@ using InstrumentComponents.Transport;
 namespace InstrumentComponents.Session;
 
 /// <summary>Active instrument session with SCPI and cached identity.</summary>
-public sealed class InstrumentSession
+public sealed class InstrumentSession : IDisposable
 {
     public ResourceAddress Address { get; }
     public ScpiSession Scpi { get; }
@@ -35,6 +36,10 @@ public sealed class InstrumentSession
     public string AddressStr => Address.Raw;
     public DeviceIdentity Identity => _identity;
 
+    /// <summary>Resolves the dialect profile for <paramref name="kind"/> using this session's identity.</summary>
+    public DialectProfile DialectFor(InstrumentKind kind) =>
+        DialectRegistry.Resolve(kind, _identity.Manufacturer, _identity.Model);
+
     public Idn Idn() => ScpiComm("idn", scpi => new global::InstrumentComponents.Ieee4882.Ieee4882(scpi).Idn());
 
     public void Reset() => ScpiComm("*RST", scpi => { new global::InstrumentComponents.Ieee4882.Ieee4882(scpi).Reset(); return true; });
@@ -56,6 +61,8 @@ public sealed class InstrumentSession
             throw new CommunicationException(Address.Raw, command, 1, ex);
         }
     }
+
+    public void Dispose() => Scpi.Dispose();
 }
 
 /// <summary>Reuses a single underlying session across typed views.</summary>

@@ -9,11 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Canonical GitHub and GitHub Pages URLs are `josh-hemphill/instrument-components` (not the misspelled `instrument-componenets-rs`)
+- Docs and examples depend on `0.1` plus git/`latest` for unreleased async APIs, not a non-existent `0.2` crate
 - Generated dialect and SCPI tables now match `cargo fmt` so CI's format check passes
-- GitHub and GitHub Pages URLs point at `instrument-componenets-rs`
+- Discovery connect options now apply to sessions opened from the resulting catalog
+- Reconnect diagnostics are recorded only when reconnect succeeds
+- C# SCPI number parse/format is culture-invariant
+- C# `ProbeSystErr` treats transport failure as unsupported
+- C# `ResetOnConnect` issues `*CLS`/`*RST` like Rust
+- C# VISA `SharedLock` fails closed (`Ivi.Visa` has no shared-lock access mode)
+- C# `VisaTransport` disposes the underlying VISA session
+- C# `VisaSessionOpener.Open` preserves `InstrumentUnsupportedException` for `SharedLock` (map access mode before the VISA open try)
+- C# `SyncAsAsyncTransport` disposes the inner sync transport so async sessions close native VISA handles
+- SCPI sessions restore I/O timeout after short probe/flush/query timeouts (ResetOnConnect no longer leaves a 500ms VISA timeout)
+- C# async SCPI cleanup restores I/O timeout without the caller cancellation token, so a cancelled flush/query cannot leave a short VISA timeout
+- C# I/O timeout restore is best-effort: it cannot fail `ResetOnConnect` session create or hide a successful probe/query
 
 ### Added
 
+- Shared dual-native contracts under `spec/` (`scpi-vectors.json`, `classifier-cases.json`) loaded by Rust and C# tests
+- Transcript fixtures now drive typed-class actions and assert measured values
+- C# examples: `DmmMeasure`, `ManualTcpip`, `DiscoverAsync`
+- Dual-native reliability plan (`docs/dual-native-plan.md`)
+- Release workflow requires the .NET CI workflow before crates.io or NuGet publish
 - Full async API behind `tokio` feature: `AsyncScpiSession`, `AsyncInstrumentSession`, `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`
 - Async typed classes: `AsyncDmm`, `AsyncDcPowerSupply`, `AsyncFunctionGenerator`, `AsyncOscilloscope`, `AsyncSwitch`, `AsyncCounter`, `AsyncPowerMeter`, `AsyncSpectrumAnalyzer`
 - Sync typed classes: `Oscilloscope`, `Switch`, `Counter`, `PowerMeter`, `SpectrumAnalyzer` (in addition to DMM / PSU / FGen)
@@ -31,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Spectrum analyzer and power meter classes emit SCPI from the resolved dialect profile (Rigol DSA `:TRAC?` vs generic `:TRAC:DATA?`)
+- Vendor dialect profiles are matched before catch-all `generic_*` rows; glob patterns like `*U20*` match a substring
 - C# `InstrumentComponents.Visa` targets `net8.0` (Linux-capable builds via `IviFoundation.Visa`; runtime still needs a vendor VISA install)
 
 ## [0.1.0] - 2026-06-06
@@ -54,4 +74,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depends on `visa-rs` 0.7.0-alpha.1 (pre-release)
 - Async APIs shipped in Unreleased (enable `tokio`); originally noted as planned for a later minor
 
-[0.1.0]: https://github.com/josh-hemphill/instrument-componenets-rs/releases/tag/v0.1.0
+[0.1.0]: https://github.com/josh-hemphill/instrument-components/releases/tag/v0.1.0

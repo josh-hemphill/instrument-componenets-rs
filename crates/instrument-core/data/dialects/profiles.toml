@@ -118,24 +118,6 @@ gate_time = ":SENSe:FREQuency:APERture {seconds}"
 channel_select = ":SENSe:FUNCtion:ON \"FREQ {channel}\""
 
 [[profile]]
-id = "generic_pwrmeter"
-kind = "PowerMeter"
-manufacturer_glob = "*"
-model_glob = "*"
-channels = 1
-
-[profile.commands]
-unit = ":UNIT:POW {unit}"
-auto_range = ":SENS:POW:RANG:AUTO {state}"
-auto_average = ":SENS:AVER:COUN:AUTO {state}"
-correction_frequency = ":SENS:FREQ {hz}"
-offset = ":SENS:CORR:GAIN2 {db}"
-initiate = "INIT"
-fetch = "FETC?"
-read = "READ?"
-configure = ":CONF"
-
-[[profile]]
 id = "keysight_sensor"
 kind = "PowerMeter"
 manufacturer_glob = "Keysight*"
@@ -154,25 +136,22 @@ read = "READ?"
 configure = ":CONF"
 
 [[profile]]
-id = "generic_specan"
-kind = "SpectrumAnalyzer"
+id = "generic_pwrmeter"
+kind = "PowerMeter"
 manufacturer_glob = "*"
 model_glob = "*"
 channels = 1
 
 [profile.commands]
-center_frequency = ":FREQ:CENT {hz}"
-span = ":FREQ:SPAN {hz}"
-rbw = ":BAND {hz}"
-vbw = ":BAND:VID {hz}"
-ref_level = ":DISP:WIND:TRAC:Y:RLEV {dbm}"
-trace_data = ":TRAC:DATA? TRACE1"
-marker_peak = ":CALC:MARK:MAX"
-marker_x = ":CALC:MARK:X?"
-marker_y = ":CALC:MARK:Y?"
-sweep_continuous = ":INIT:CONT {state}"
-single_sweep = ":INIT:IMM"
-wait_opc = "*OPC?"
+unit = ":UNIT:POW {unit}"
+auto_range = ":SENS:POW:RANG:AUTO {state}"
+auto_average = ":SENS:AVER:COUN:AUTO {state}"
+correction_frequency = ":SENS:FREQ {hz}"
+offset = ":SENS:CORR:GAIN2 {db}"
+initiate = "INIT"
+fetch = "FETC?"
+read = "READ?"
+configure = ":CONF"
 
 [[profile]]
 id = "keysight_xseries"
@@ -214,4 +193,25 @@ marker_x = ":CALC:MARK:X?"
 marker_y = ":CALC:MARK:Y?"
 sweep_continuous = ":INIT:CONT {state}"
 single_sweep = ":INIT"
+wait_opc = "*OPC?"
+
+[[profile]]
+id = "generic_specan"
+kind = "SpectrumAnalyzer"
+manufacturer_glob = "*"
+model_glob = "*"
+channels = 1
+
+[profile.commands]
+center_frequency = ":FREQ:CENT {hz}"
+span = ":FREQ:SPAN {hz}"
+rbw = ":BAND {hz}"
+vbw = ":BAND:VID {hz}"
+ref_level = ":DISP:WIND:TRAC:Y:RLEV {dbm}"
+trace_data = ":TRAC:DATA? TRACE1"
+marker_peak = ":CALC:MARK:MAX"
+marker_x = ":CALC:MARK:X?"
+marker_y = ":CALC:MARK:Y?"
+sweep_continuous = ":INIT:CONT {state}"
+single_sweep = ":INIT:IMM"
 wait_opc = "*OPC?"

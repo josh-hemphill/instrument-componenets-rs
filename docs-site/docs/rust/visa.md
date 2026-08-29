@@ -43,7 +43,7 @@ Async: `AsyncDiscovery::visa()?.scan().await?` with the `tokio` feature. Session
 
 ```toml
 # Cross-compile example
-instrument-components = { version = "0.2", features = ["visa", "cross-compile"] }
+instrument-components = { version = "0.1", features = ["visa", "cross-compile"] }
 ```
 
 ```bash

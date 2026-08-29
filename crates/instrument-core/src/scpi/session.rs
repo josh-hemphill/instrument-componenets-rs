@@ -32,6 +32,7 @@ impl ScpiSession {
         if session.opts.reset_on_connect {
             let _ = Ieee4882::new(&mut session).clear_status();
             let _ = Ieee4882::new(&mut session).reset();
+            let _ = session.restore_io_timeout();
         }
         Ok(session)
     }
@@ -53,6 +54,12 @@ impl ScpiSession {
     pub fn flush(&mut self) -> Result<()> {
         let short = Duration::from_millis(50);
         self.transport.set_read_timeout(short)?;
+        let result = self.drain_read_buffer();
+        let _ = self.restore_io_timeout();
+        result
+    }
+
+    fn drain_read_buffer(&mut self) -> Result<()> {
         let mut chunk = [0u8; 256];
         loop {
             match self.transport.read(&mut chunk) {
@@ -107,8 +114,7 @@ impl ScpiSession {
                         "write timeout",
                     );
                     if self.opts.reconnect_on_failure {
-                        let _ = self.transport.reconnect();
-                        self.record_reconnect();
+                        self.try_reconnect();
                     }
                     thread::sleep(self.opts.retry_backoff);
                 }
@@ -138,6 +144,12 @@ impl ScpiSession {
 
     fn read_response(&mut self, timeout: Duration) -> Result<Vec<u8>> {
         self.transport.set_read_timeout(timeout)?;
+        let result = self.read_framed_response();
+        let _ = self.restore_io_timeout();
+        result
+    }
+
+    fn read_framed_response(&mut self) -> Result<Vec<u8>> {
         self.read_buffer.clear();
         let command = self.pending_command.clone();
 
@@ -170,8 +182,7 @@ impl ScpiSession {
                         }
                     }
                     if self.opts.reconnect_on_failure {
-                        let _ = self.transport.reconnect();
-                        self.record_reconnect();
+                        self.try_reconnect();
                     }
                     self.record_failure(
                         CommsEventKind::Timeout,
@@ -227,8 +238,19 @@ impl ScpiSession {
         }
     }
 
+    fn try_reconnect(&mut self) {
+        if self.transport.reconnect().is_ok() {
+            self.record_reconnect();
+        }
+    }
+
     fn effective_read_timeout(&self) -> Duration {
         self.opts.per_op_timeout.unwrap_or(self.opts.read_timeout)
+    }
+
+    /// Restores the session I/O timeout after a short probe or flush.
+    fn restore_io_timeout(&mut self) -> Result<()> {
+        self.transport.set_read_timeout(self.opts.io_timeout())
     }
 
     /// Probes and caches whether SYST:ERR? is supported.

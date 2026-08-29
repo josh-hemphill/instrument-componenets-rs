@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Errors;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -14,63 +15,47 @@ public sealed class SpectrumAnalyzer
 
     public InstrumentSession Session => _session;
 
-    private DialectProfile Dialect =>
-        DialectRegistry.Resolve(
-            InstrumentKind.SpectrumAnalyzer,
-            _session.Identity.Manufacturer,
-            _session.Identity.Model);
+    private DialectProfile Dialect => _session.DialectFor(InstrumentKind.SpectrumAnalyzer);
+
+    private string RequireCommand(string key) =>
+        Dialect.Command(key) ?? throw new InstrumentUnsupportedException($"spectrum analyzer dialect missing command '{key}'");
+
+    private string RequireFormatted(string key, params (string Name, string Value)[] vars) =>
+        Dialect.FormatCommand(key, vars) ?? throw new InstrumentUnsupportedException($"spectrum analyzer dialect missing command '{key}'");
 
     public void SetCenterFrequency(double hz) =>
-        _session.Scpi.Write(ScpiCommands.SpecanCenterFrequency(hz));
+        _session.Scpi.Write(RequireFormatted("center_frequency", ("hz", ScpiFormat.Double(hz))));
 
     public void SetSpan(double hz) =>
-        _session.Scpi.Write(ScpiCommands.SpecanSpan(hz));
+        _session.Scpi.Write(RequireFormatted("span", ("hz", ScpiFormat.Double(hz))));
 
     public void SetRbw(double hz) =>
-        _session.Scpi.Write(ScpiCommands.SpecanRbw(hz));
+        _session.Scpi.Write(RequireFormatted("rbw", ("hz", ScpiFormat.Double(hz))));
 
     public void SetVbw(double hz) =>
-        _session.Scpi.Write(ScpiCommands.SpecanVbw(hz));
+        _session.Scpi.Write(RequireFormatted("vbw", ("hz", ScpiFormat.Double(hz))));
 
     public void SetRefLevel(double dbm) =>
-        _session.Scpi.Write(ScpiCommands.SpecanRefLevel(dbm));
+        _session.Scpi.Write(RequireFormatted("ref_level", ("dbm", ScpiFormat.Double(dbm))));
 
-    public IReadOnlyList<double> FetchTraceAscii()
-    {
-        var cmd = Dialect.Command("trace_data") ?? ScpiCommands.SpecanTraceData;
-        return ScpiSession.ParseF64Csv(_session.Scpi.Query(cmd));
-    }
+    public IReadOnlyList<double> FetchTraceAscii() =>
+        ScpiSession.ParseF64Csv(_session.Scpi.Query(RequireCommand("trace_data")));
 
-    public void MarkerPeak()
-    {
-        var cmd = Dialect.Command("marker_peak") ?? ScpiCommands.SpecanMarkerPeak;
-        _session.Scpi.Write(cmd);
-    }
+    public void MarkerPeak() =>
+        _session.Scpi.Write(RequireCommand("marker_peak"));
 
-    public double MarkerX()
-    {
-        var cmd = Dialect.Command("marker_x") ?? ScpiCommands.SpecanMarkerX;
-        return ScpiSession.ParseF64(_session.Scpi.Query(cmd));
-    }
+    public double MarkerX() =>
+        ScpiSession.ParseF64(_session.Scpi.Query(RequireCommand("marker_x")));
 
-    public double MarkerY()
-    {
-        var cmd = Dialect.Command("marker_y") ?? ScpiCommands.SpecanMarkerY;
-        return ScpiSession.ParseF64(_session.Scpi.Query(cmd));
-    }
+    public double MarkerY() =>
+        ScpiSession.ParseF64(_session.Scpi.Query(RequireCommand("marker_y")));
 
     public void SweepContinuous(bool enabled) =>
-        _session.Scpi.Write(ScpiCommands.SpecanSweepContinuous(enabled ? "ON" : "OFF"));
+        _session.Scpi.Write(RequireFormatted("sweep_continuous", ("state", enabled ? "ON" : "OFF")));
 
-    public void SingleSweep()
-    {
-        var cmd = Dialect.Command("single_sweep") ?? ScpiCommands.SpecanSingleSweep;
-        _session.Scpi.Write(cmd);
-    }
+    public void SingleSweep() =>
+        _session.Scpi.Write(RequireCommand("single_sweep"));
 
-    public void WaitOpc()
-    {
-        var cmd = Dialect.Command("wait_opc") ?? ScpiCommands.SpecanWaitOpc;
-        _ = _session.Scpi.Query(cmd);
-    }
+    public void WaitOpc() =>
+        _ = _session.Scpi.Query(RequireCommand("wait_opc"));
 }

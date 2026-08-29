@@ -135,11 +135,10 @@ impl Discovery {
             concurrency,
         )?;
 
-        Ok(DeviceCatalog::from_devices_with_observer(
-            self.opener.clone(),
-            devices,
-            self.observer,
-        ))
+        Ok(
+            DeviceCatalog::from_devices_with_observer(self.opener.clone(), devices, self.observer)
+                .with_connect_options(self.connect_options),
+        )
     }
 }
 

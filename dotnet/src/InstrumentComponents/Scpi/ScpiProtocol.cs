@@ -1,4 +1,5 @@
 using InstrumentComponents.Errors;
+using System.Globalization;
 
 namespace InstrumentComponents.Scpi;
 
@@ -15,7 +16,7 @@ internal static class ScpiProtocol
 
     public static double ParseF64(string response)
     {
-        if (!double.TryParse(response.Trim(), out var value))
+        if (!double.TryParse(response.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
             throw new ParseException($"expected number, got '{response}'");
         return value;
     }
@@ -28,10 +29,11 @@ internal static class ScpiProtocol
             var trimmed = part.Trim();
             if (trimmed.Length == 0)
                 continue;
-            if (!double.TryParse(trimmed, out var value))
+            if (!double.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
                 throw new ParseException($"expected number, got '{trimmed}'");
             values.Add(value);
         }
         return values;
     }
 }
+

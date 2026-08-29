@@ -1,6 +1,6 @@
 # Docs site (MkDocs Material)
 
-Public documentation for [instrument-components](https://josh-hemphill.github.io/instrument-componenets-rs/).
+Public documentation for [instrument-components](https://josh-hemphill.github.io/instrument-components/).
 
 ## Local serve
 

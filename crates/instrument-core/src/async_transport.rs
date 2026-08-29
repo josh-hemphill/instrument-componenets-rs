@@ -50,7 +50,7 @@ pub trait AsyncTransport: Send {
         &'a mut self,
         opts: &'a ConnectOptions,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {
-        let timeout = opts.read_timeout;
+        let timeout = opts.io_timeout();
         Box::pin(async move { self.set_read_timeout(timeout).await })
     }
 }

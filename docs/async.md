@@ -8,9 +8,11 @@ Sync remains the default. Async is additive behind `tokio`.
 
 ```toml
 [dependencies]
-instrument-components = { version = "0.2", features = ["visa", "tokio"] }
+instrument-components = { version = "0.1", features = ["visa", "tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
+
+The published crates.io `0.1.0` tag does not include this async API. Use git/`latest` until `0.2.0`.
 
 Feature chain:
 
@@ -109,7 +111,7 @@ Prefer `AsyncScpiSession` / typed classes for framing, retries, and diagnostics.
 ## Cross-compile
 
 ```toml
-instrument-components = { version = "0.2", features = ["visa", "cross-compile"] }
+instrument-components = { version = "0.1", features = ["visa", "cross-compile"] }
 ```
 
 ```bash

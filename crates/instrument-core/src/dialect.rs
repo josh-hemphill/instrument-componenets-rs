@@ -132,24 +132,6 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
         ],
     },
     DialectProfile {
-        id: "generic_pwrmeter",
-        kind: InstrumentKind::PowerMeter,
-        manufacturer_glob: "*",
-        model_glob: "*",
-        channels: 1,
-        commands: &[
-            ("unit", ":UNIT:POW {unit}"),
-            ("auto_range", ":SENS:POW:RANG:AUTO {state}"),
-            ("auto_average", ":SENS:AVER:COUN:AUTO {state}"),
-            ("correction_frequency", ":SENS:FREQ {hz}"),
-            ("offset", ":SENS:CORR:GAIN2 {db}"),
-            ("initiate", "INIT"),
-            ("fetch", "FETC?"),
-            ("read", "READ?"),
-            ("configure", ":CONF"),
-        ],
-    },
-    DialectProfile {
         id: "keysight_sensor",
         kind: InstrumentKind::PowerMeter,
         manufacturer_glob: "Keysight*",
@@ -168,24 +150,21 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
         ],
     },
     DialectProfile {
-        id: "generic_specan",
-        kind: InstrumentKind::SpectrumAnalyzer,
+        id: "generic_pwrmeter",
+        kind: InstrumentKind::PowerMeter,
         manufacturer_glob: "*",
         model_glob: "*",
         channels: 1,
         commands: &[
-            ("center_frequency", ":FREQ:CENT {hz}"),
-            ("span", ":FREQ:SPAN {hz}"),
-            ("rbw", ":BAND {hz}"),
-            ("vbw", ":BAND:VID {hz}"),
-            ("ref_level", ":DISP:WIND:TRAC:Y:RLEV {dbm}"),
-            ("trace_data", ":TRAC:DATA? TRACE1"),
-            ("marker_peak", ":CALC:MARK:MAX"),
-            ("marker_x", ":CALC:MARK:X?"),
-            ("marker_y", ":CALC:MARK:Y?"),
-            ("sweep_continuous", ":INIT:CONT {state}"),
-            ("single_sweep", ":INIT:IMM"),
-            ("wait_opc", "*OPC?"),
+            ("unit", ":UNIT:POW {unit}"),
+            ("auto_range", ":SENS:POW:RANG:AUTO {state}"),
+            ("auto_average", ":SENS:AVER:COUN:AUTO {state}"),
+            ("correction_frequency", ":SENS:FREQ {hz}"),
+            ("offset", ":SENS:CORR:GAIN2 {db}"),
+            ("initiate", "INIT"),
+            ("fetch", "FETC?"),
+            ("read", "READ?"),
+            ("configure", ":CONF"),
         ],
     },
     DialectProfile {
@@ -230,6 +209,27 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
             ("wait_opc", "*OPC?"),
         ],
     },
+    DialectProfile {
+        id: "generic_specan",
+        kind: InstrumentKind::SpectrumAnalyzer,
+        manufacturer_glob: "*",
+        model_glob: "*",
+        channels: 1,
+        commands: &[
+            ("center_frequency", ":FREQ:CENT {hz}"),
+            ("span", ":FREQ:SPAN {hz}"),
+            ("rbw", ":BAND {hz}"),
+            ("vbw", ":BAND:VID {hz}"),
+            ("ref_level", ":DISP:WIND:TRAC:Y:RLEV {dbm}"),
+            ("trace_data", ":TRAC:DATA? TRACE1"),
+            ("marker_peak", ":CALC:MARK:MAX"),
+            ("marker_x", ":CALC:MARK:X?"),
+            ("marker_y", ":CALC:MARK:Y?"),
+            ("sweep_continuous", ":INIT:CONT {state}"),
+            ("single_sweep", ":INIT:IMM"),
+            ("wait_opc", "*OPC?"),
+        ],
+    },
 ];
 
 fn glob_match(pat: &str, value: &str) -> bool {
@@ -238,13 +238,17 @@ fn glob_match(pat: &str, value: &str) -> bool {
     if pat == "*" {
         return true;
     }
-    if let Some(prefix) = pat.strip_suffix('*') {
-        return value.starts_with(prefix);
+    let starts = pat.starts_with('*');
+    let ends = pat.ends_with('*');
+    match (starts, ends) {
+        (true, true) => {
+            let inner = &pat[1..pat.len() - 1];
+            inner.is_empty() || value.contains(inner)
+        }
+        (false, true) => value.starts_with(&pat[..pat.len() - 1]),
+        (true, false) => value.ends_with(&pat[1..]),
+        (false, false) => value == pat,
     }
-    if let Some(suffix) = pat.strip_prefix('*') {
-        return value.ends_with(suffix);
-    }
-    value == pat
 }
 
 /// Resolves the first dialect profile matching kind + optional IDN fields.

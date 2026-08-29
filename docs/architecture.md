@@ -8,14 +8,14 @@ instrument-components   (facade — package name; lib name is `instrument`)
 └── instrument-visa     (visa-rs backend, optional via `visa` feature)
 ```
 
-Consumers typically depend only on `instrument-components` and use `instrument::prelude::*`.
+Consumers typically depend only on `instrument-components` and use `instrument::prelude::*`. The C# packages live under `dotnet/` and must stay behaviorally aligned; see [dual-native-plan.md](dual-native-plan.md).
 
 ## Layered design
 
 ```mermaid
 flowchart TB
   App[Your application]
-  Typed[Dmm / DcPowerSupply / FunctionGenerator / Oscilloscope / Switch / Counter]
+  Typed[Dmm / DcPowerSupply / FunctionGenerator / Oscilloscope / Switch / Counter / PowerMeter / SpectrumAnalyzer]
   Catalog[DeviceCatalog / Discovery]
   Session[InstrumentSession / ScpiSession]
   Transport[Transport trait]
