@@ -211,9 +211,18 @@ public sealed class AsyncScpiSession : IDisposable
 
     private TimeSpan EffectiveReadTimeout() => _opts.PerOpTimeout ?? _opts.ReadTimeout;
 
-    /// Restores the configured I/O timeout; ignores caller cancel so cleanup cannot leave a short timeout.
-    private ValueTask RestoreIoTimeoutAsync() =>
-        _transport.SetReadTimeoutAsync(_opts.IoTimeout(), CancellationToken.None);
+    /// Restores the configured I/O timeout without the caller token; swallows restore errors.
+    private async ValueTask RestoreIoTimeoutAsync()
+    {
+        try
+        {
+            await _transport.SetReadTimeoutAsync(_opts.IoTimeout(), CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Best-effort: do not hide the original I/O result or fail session create.
+        }
+    }
 
     public async Task<bool> ProbeSystErrAsync(CancellationToken cancellationToken = default)
     {

@@ -206,7 +206,18 @@ public sealed class ScpiSession : IDisposable
     private TimeSpan EffectiveReadTimeout() => _opts.PerOpTimeout ?? _opts.ReadTimeout;
 
     /// Restores the configured I/O timeout after a short probe, flush, or query.
-    private void RestoreIoTimeout() => _transport.SetReadTimeout(_opts.IoTimeout());
+    /// Best-effort: a restore failure must not hide the original I/O result or fail session create.
+    private void RestoreIoTimeout()
+    {
+        try
+        {
+            _transport.SetReadTimeout(_opts.IoTimeout());
+        }
+        catch
+        {
+            // ignored
+        }
+    }
 
     public bool ProbeSystErr()
     {

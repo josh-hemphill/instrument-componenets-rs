@@ -86,6 +86,72 @@ public class ReliabilityTests
         Assert.Equal(opts.IoTimeout(), transport.LastReadTimeout);
     }
 
+    [Fact]
+    public void ResetOnConnectSucceedsWhenTimeoutRestoreFails()
+    {
+        var transport = new ThrowOnTimeoutRestoreTransport();
+        var opts = new ConnectOptions { ResetOnConnect = true, ReconnectOnFailure = false };
+        var session = new ScpiSession(transport, opts);
+        Assert.Same(transport, session.Transport);
+    }
+
+    [Fact]
+    public async Task AsyncResetOnConnectSucceedsWhenTimeoutRestoreFails()
+    {
+        var inner = new ThrowOnTimeoutRestoreTransport();
+        var session = await AsyncScpiSession.CreateAsync(
+            new SyncAsAsyncTransport<ThrowOnTimeoutRestoreTransport>(inner),
+            new ConnectOptions { ResetOnConnect = true, ReconnectOnFailure = false });
+        Assert.Same(inner, ((SyncAsAsyncTransport<ThrowOnTimeoutRestoreTransport>)session.Transport).Inner);
+    }
+
+    [Fact]
+    public void ProbeOpcSuccessIsNotHiddenByRestoreFailure()
+    {
+        var transport = new OpcThenFailRestoreTransport();
+        var session = new ScpiSession(transport, new ConnectOptions { ReconnectOnFailure = false });
+        Assert.True(session.ProbeOpc());
+    }
+
+    private sealed class ThrowOnTimeoutRestoreTransport : TransportBase
+    {
+        private int _sets;
+
+        public override void Write(ReadOnlySpan<byte> data) { }
+        public override int Read(Span<byte> buffer) => throw new TransportClosedException();
+        public override void Clear() { }
+
+        public override void SetReadTimeout(TimeSpan timeout)
+        {
+            _sets++;
+            if (_sets > 1)
+                throw new TransportException("restore failed");
+        }
+    }
+
+    private sealed class OpcThenFailRestoreTransport : TransportBase
+    {
+        private int _sets;
+
+        public override void Write(ReadOnlySpan<byte> data) { }
+
+        public override int Read(Span<byte> buffer)
+        {
+            ReadOnlySpan<byte> data = "1\n"u8;
+            data.CopyTo(buffer);
+            return data.Length;
+        }
+
+        public override void Clear() { }
+
+        public override void SetReadTimeout(TimeSpan timeout)
+        {
+            _sets++;
+            if (_sets >= 3)
+                throw new TransportException("restore failed");
+        }
+    }
+
     private sealed class CancelAfterShortTimeoutTransport : AsyncTransportBase
     {
         private readonly CancellationTokenSource _cts;
