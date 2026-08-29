@@ -37,7 +37,7 @@ public sealed class VisaAsyncTransport : IAsyncTransport, IDisposable
 
     public void Dispose()
     {
-        _inner.Inner.Dispose();
+        _inner.Dispose();
         GC.SuppressFinalize(this);
     }
 }

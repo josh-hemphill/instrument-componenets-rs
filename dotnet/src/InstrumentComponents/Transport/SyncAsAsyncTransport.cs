@@ -3,7 +3,7 @@ using InstrumentComponents.Connect;
 namespace InstrumentComponents.Transport;
 
 /// <summary>Wraps a sync transport as an async transport (for mocks/tests).</summary>
-public sealed class SyncAsAsyncTransport<T> : IAsyncTransport where T : ITransport
+public sealed class SyncAsAsyncTransport<T> : IAsyncTransport, IDisposable where T : ITransport
 {
     private readonly T _inner;
 
@@ -52,5 +52,12 @@ public sealed class SyncAsAsyncTransport<T> : IAsyncTransport where T : ITranspo
         cancellationToken.ThrowIfCancellationRequested();
         _inner.Configure(opts);
         return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (_inner is IDisposable disposable)
+            disposable.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

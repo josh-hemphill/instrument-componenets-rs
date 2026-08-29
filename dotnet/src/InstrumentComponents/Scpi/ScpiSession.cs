@@ -27,6 +27,7 @@ public sealed class ScpiSession : IDisposable
         {
             try { new global::InstrumentComponents.Ieee4882.Ieee4882(this).ClearStatus(); } catch { /* best-effort */ }
             try { new global::InstrumentComponents.Ieee4882.Ieee4882(this).Reset(); } catch { /* best-effort */ }
+            RestoreIoTimeout();
         }
     }
 
@@ -63,6 +64,7 @@ public sealed class ScpiSession : IDisposable
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
+            RestoreIoTimeout();
         }
         _readBuffer.Clear();
     }
@@ -175,6 +177,7 @@ public sealed class ScpiSession : IDisposable
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
+            RestoreIoTimeout();
         }
     }
 
@@ -201,6 +204,9 @@ public sealed class ScpiSession : IDisposable
     }
 
     private TimeSpan EffectiveReadTimeout() => _opts.PerOpTimeout ?? _opts.ReadTimeout;
+
+    /// Restores the configured I/O timeout after a short probe, flush, or query.
+    private void RestoreIoTimeout() => _transport.SetReadTimeout(_opts.IoTimeout());
 
     public bool ProbeSystErr()
     {

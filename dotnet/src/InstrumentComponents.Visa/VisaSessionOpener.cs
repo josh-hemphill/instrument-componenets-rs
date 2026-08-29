@@ -12,11 +12,12 @@ public sealed class VisaSessionOpener : ISessionOpener, IAsyncSessionOpener
 {
     public ITransport Open(ResourceAddress address, ConnectOptions opts)
     {
+        var accessMode = MapAccessMode(opts.AccessMode);
         try
         {
             var session = (IMessageBasedSession)GlobalResourceManager.Open(
                 address.Raw,
-                MapAccessMode(opts.AccessMode),
+                accessMode,
                 (int)opts.OpenTimeout.TotalMilliseconds);
             return new VisaTransport(session);
         }

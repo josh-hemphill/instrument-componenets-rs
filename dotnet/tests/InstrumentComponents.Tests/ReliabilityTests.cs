@@ -1,4 +1,5 @@
 using InstrumentComponents.Connect;
+using InstrumentComponents.Errors;
 using InstrumentComponents.Mock;
 using InstrumentComponents.Scpi;
 using InstrumentComponents.Transport;
@@ -41,5 +42,41 @@ public class ReliabilityTests
         _ = new ScpiSession(transport, opts);
         var written = System.Text.Encoding.UTF8.GetString(transport.Written.ToArray());
         Assert.Contains("*CLS", written);
+    }
+
+    [Fact]
+    public void ProbeOpcFailureRestoresIoTimeout()
+    {
+        var transport = new BufferTransport();
+        var opts = new ConnectOptions
+        {
+            ReadTimeout = TimeSpan.FromSeconds(9),
+            WriteTimeout = TimeSpan.FromSeconds(4),
+            ReconnectOnFailure = false,
+        };
+        var session = new ScpiSession(transport, opts);
+        Assert.False(session.ProbeOpc());
+        Assert.Equal(opts.IoTimeout(), transport.LastReadTimeout);
+    }
+
+    [Fact]
+    public async Task AsyncSessionDisposesWrappedSyncTransport()
+    {
+        var inner = new DisposableTransport();
+        var session = await AsyncScpiSession.CreateAsync(
+            new SyncAsAsyncTransport<DisposableTransport>(inner),
+            new ConnectOptions { ReconnectOnFailure = false });
+        session.Dispose();
+        Assert.True(inner.Disposed);
+    }
+
+    private sealed class DisposableTransport : TransportBase, IDisposable
+    {
+        public bool Disposed { get; private set; }
+        public override void Write(ReadOnlySpan<byte> data) { }
+        public override int Read(Span<byte> buffer) => throw new TransportClosedException();
+        public override void Clear() { }
+        public override void SetReadTimeout(TimeSpan timeout) { }
+        public void Dispose() => Disposed = true;
     }
 }

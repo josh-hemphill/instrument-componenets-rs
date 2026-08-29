@@ -31,6 +31,7 @@ impl AsyncScpiSession {
         if session.opts.reset_on_connect {
             let _ = AsyncIeee4882::new(&mut session).clear_status().await;
             let _ = AsyncIeee4882::new(&mut session).reset().await;
+            let _ = session.restore_io_timeout().await;
         }
         Ok(session)
     }
@@ -52,6 +53,12 @@ impl AsyncScpiSession {
     pub async fn flush(&mut self) -> Result<()> {
         let short = Duration::from_millis(50);
         self.transport.set_read_timeout(short).await?;
+        let result = self.drain_read_buffer().await;
+        let _ = self.restore_io_timeout().await;
+        result
+    }
+
+    async fn drain_read_buffer(&mut self) -> Result<()> {
         let mut chunk = [0u8; 256];
         loop {
             match self.transport.read(&mut chunk).await {
@@ -137,6 +144,12 @@ impl AsyncScpiSession {
 
     async fn read_response(&mut self, timeout: Duration) -> Result<Vec<u8>> {
         self.transport.set_read_timeout(timeout).await?;
+        let result = self.read_framed_response().await;
+        let _ = self.restore_io_timeout().await;
+        result
+    }
+
+    async fn read_framed_response(&mut self) -> Result<Vec<u8>> {
         self.read_buffer.clear();
         let command = self.pending_command.clone();
 
@@ -233,6 +246,13 @@ impl AsyncScpiSession {
 
     fn effective_read_timeout(&self) -> Duration {
         self.opts.per_op_timeout.unwrap_or(self.opts.read_timeout)
+    }
+
+    /// Restores the session I/O timeout after a short probe or flush.
+    async fn restore_io_timeout(&mut self) -> Result<()> {
+        self.transport
+            .set_read_timeout(self.opts.io_timeout())
+            .await
     }
 
     /// Probes and caches whether SYST:ERR? is supported.
