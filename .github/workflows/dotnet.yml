@@ -27,10 +27,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
       - uses: denoland/setup-deno@v2
       - run: deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
-      - run: deno run --allow-read --allow-write tools/gen-shared-tables.ts
-      - run: deno run --allow-read --allow-write tools/gen-dialects.ts
+      - run: deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-shared-tables.ts
+      - run: deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-dialects.ts
+      - run: rustfmt crates/instrument-core/src/classifier/probes.rs crates/instrument-core/src/scpi_commands.rs crates/instrument-core/src/dialect.rs
       - run: git diff --exit-code -- dotnet/src/InstrumentComponents/Data/model_registry.json dotnet/src/InstrumentComponents/Classifier/CapabilityProbes.cs dotnet/src/InstrumentComponents/Classes/ScpiCommands.cs crates/instrument-core/src/classifier/probes.rs crates/instrument-core/src/scpi_commands.rs crates/instrument-core/src/dialect.rs dotnet/src/InstrumentComponents/Dialects/DialectRegistry.cs
 
   build-test:

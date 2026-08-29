@@ -19,11 +19,22 @@ pub const SCOPE_READONLY_COMMANDS: &[&str] = &[
     "WAVeform:SOURce?",
 ];
 
-pub const SWITCH_READONLY_COMMANDS: &[&str] = &[":ROUTe:CLOS?", "ROUT:CLOS?", ":ROUTe:CAT?", "ROUT:CAT?"];
+pub const SWITCH_READONLY_COMMANDS: &[&str] =
+    &[":ROUTe:CLOS?", "ROUT:CLOS?", ":ROUTe:CAT?", "ROUT:CAT?"];
 
-pub const COUNTER_READONLY_COMMANDS: &[&str] = &[":COUNter:DATA?", "COUN:DATA?", ":COUNter:A:DATA?", "COUN:A:DATA?"];
+pub const COUNTER_READONLY_COMMANDS: &[&str] = &[
+    ":COUNter:DATA?",
+    "COUN:DATA?",
+    ":COUNter:A:DATA?",
+    "COUN:A:DATA?",
+];
 
-pub const PWRMETER_READONLY_COMMANDS: &[&str] = &[":UNIT:POW?", "UNIT:POW?", ":SENS:POW:RANG:AUTO?", "SENS:POW:RANG:AUTO?"];
+pub const PWRMETER_READONLY_COMMANDS: &[&str] = &[
+    ":UNIT:POW?",
+    "UNIT:POW?",
+    ":SENS:POW:RANG:AUTO?",
+    "SENS:POW:RANG:AUTO?",
+];
 
 pub const SPECAN_READONLY_COMMANDS: &[&str] = &[
     ":FREQ:CENT?",
