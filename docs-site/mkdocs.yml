@@ -1,8 +1,8 @@
 site_name: instrument-components
 site_description: High-level Rust and C# control for VISA / SCPI instruments
-site_url: https://josh-hemphill.github.io/instrument-components-rs/
-repo_url: https://github.com/josh-hemphill/instrument-components-rs
-repo_name: josh-hemphill/instrument-components-rs
+site_url: https://josh-hemphill.github.io/instrument-componenets-rs/
+repo_url: https://github.com/josh-hemphill/instrument-componenets-rs
+repo_name: josh-hemphill/instrument-componenets-rs
 edit_uri: edit/latest/docs-site/docs/
 
 docs_dir: docs

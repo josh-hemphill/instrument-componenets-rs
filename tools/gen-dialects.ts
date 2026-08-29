@@ -1,6 +1,8 @@
 /**
  * Generate Rust + C# dialect profile tables from data/dialects/profiles.toml.
  */
+import { rustfmtGenerated } from "./rustfmt-generated.ts";
+
 const root = new URL("..", import.meta.url);
 const tomlPath = new URL(
   "crates/instrument-core/data/dialects/profiles.toml",
@@ -86,8 +88,8 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
 
 for (const p of profiles) {
   const cmds = Object.entries(p.commands)
-    .map(([k, v]) => `        ("${esc(k)}", "${esc(v)}")`)
-    .join(",\n");
+    .map(([k, v]) => `            ("${esc(k)}", "${esc(v)}")`)
+    .join(",\n") + ",";
   rust += `    DialectProfile {
         id: "${esc(p.id)}",
         kind: ${kindRust(p.kind)},
@@ -142,7 +144,10 @@ pub fn resolve_dialect(
 
 impl DialectProfile {
     pub fn command(&self, key: &str) -> Option<&'static str> {
-        self.commands.iter().find(|(k, _)| *k == key).map(|(_, v)| *v)
+        self.commands
+            .iter()
+            .find(|(k, _)| *k == key)
+            .map(|(_, v)| *v)
     }
 
     pub fn command_map(&self) -> HashMap<&'static str, &'static str> {
@@ -250,6 +255,7 @@ await Deno.mkdir(new URL("dotnet/src/InstrumentComponents/Dialects/", root), {
 });
 await Deno.writeTextFile(rustOut, rust);
 await Deno.writeTextFile(csOut, cs);
+await rustfmtGenerated([rustOut]);
 console.log("Wrote", rustOut.pathname);
 console.log("Wrote", csOut.pathname);
 console.log(`Profiles: ${profiles.length}`);

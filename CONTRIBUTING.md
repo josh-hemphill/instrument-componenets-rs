@@ -5,8 +5,8 @@ Thank you for contributing to instrument-components-rs.
 ## Development setup
 
 ```bash
-git clone https://github.com/josh-hemphill/instrument-components-rs.git
-cd instrument-components-rs
+git clone https://github.com/josh-hemphill/instrument-componenets-rs.git
+cd instrument-componenets-rs
 cargo test --workspace --no-default-features
 ```
 
@@ -70,10 +70,12 @@ Registry entries are **hints only** — capability probes and `*IDN?` can overri
 Edit TOML under `crates/instrument-core/data/`, then:
 
 ```bash
-deno run --allow-read --allow-write tools/gen-shared-tables.ts
+deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-shared-tables.ts
+deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-dialects.ts
+deno run --allow-read --allow-write dotnet/tools/gen-registry.ts
 ```
 
-This regenerates Rust `probes.rs` / `scpi_commands.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs`. CI fails on drift.
+This regenerates Rust `probes.rs` / `scpi_commands.rs` / `dialect.rs` and C# `CapabilityProbes.cs` / `ScpiCommands.cs` / `DialectRegistry.cs`. Codegen runs `rustfmt` on the Rust outputs. CI fails on drift.
 
 ## Pull requests
 

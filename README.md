@@ -1,6 +1,6 @@
 # instrument-components — Rust test-equipment control
 
-[![CI](https://github.com/josh-hemphill/instrument-components-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/josh-hemphill/instrument-components-rs/actions/workflows/ci.yml)
+[![CI](https://github.com/josh-hemphill/instrument-componenets-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/josh-hemphill/instrument-componenets-rs/actions/workflows/ci.yml)
 
 High-level Rust control for VISA instruments: auto-discovery, IVI-inspired typed classes (DMM, PSU, function generator, oscilloscope, switch, counter), and mock fixtures for CI — built on [visa-rs](https://crates.io/crates/visa-rs).
 
@@ -131,7 +131,7 @@ See [docs/async.md](docs/async.md) for hardware async discovery and the full typ
 
 ## Documentation
 
-Published site (MkDocs): [https://josh-hemphill.github.io/instrument-components-rs/](https://josh-hemphill.github.io/instrument-components-rs/)
+Published site (MkDocs): [https://josh-hemphill.github.io/instrument-componenets-rs/](https://josh-hemphill.github.io/instrument-componenets-rs/)
 
 - [Getting started](docs/getting-started.md) — step-by-step setup
 - [Architecture](docs/architecture.md) — crate layout and mental model

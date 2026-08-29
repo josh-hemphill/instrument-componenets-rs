@@ -5,8 +5,8 @@ use instrument_core::AsyncInstrumentSession;
 
 /// Async switch / matrix session view (IVI-inspired / SCPI :ROUTe).
 ///
-/// Path model: routes are matrix channel pairs `(ch1, ch2)`. Use [`Switch::path_label`]
-/// for a stable human-readable name; IVI "ClosePath" maps to [`close_route`].
+/// Path model: routes are matrix channel pairs `(ch1, ch2)`. Use [`Self::path_label`]
+/// for a stable human-readable name; IVI "ClosePath" maps to [`Self::close_route`].
 pub struct AsyncSwitch {
     session: AsyncInstrumentSession,
 }

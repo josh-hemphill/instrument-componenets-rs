@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Generated dialect and SCPI tables now match `cargo fmt` so CI's format check passes
+- GitHub and GitHub Pages URLs point at `instrument-componenets-rs`
+
 ### Added
 
 - Full async API behind `tokio` feature: `AsyncScpiSession`, `AsyncInstrumentSession`, `AsyncDiscovery`, `AsyncDeviceCatalog`, `AsyncDeviceRef`
@@ -49,4 +54,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depends on `visa-rs` 0.7.0-alpha.1 (pre-release)
 - Async APIs shipped in Unreleased (enable `tokio`); originally noted as planned for a later minor
 
-[0.1.0]: https://github.com/josh-hemphill/instrument-components-rs/releases/tag/v0.1.0
+[0.1.0]: https://github.com/josh-hemphill/instrument-componenets-rs/releases/tag/v0.1.0

@@ -500,9 +500,7 @@ mod tests {
             ScriptStep::Write {
                 data: ":ROUTe:CLOS?\n".into(),
             },
-            ScriptStep::Read {
-                data: "0\n".into(),
-            },
+            ScriptStep::Read { data: "0\n".into() },
         ]);
         let mut session = ScpiSession::new(Box::new(transport), ConnectOptions::default()).unwrap();
         assert!(probe_any(

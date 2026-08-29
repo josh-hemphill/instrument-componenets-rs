@@ -50,7 +50,10 @@ impl Oscilloscope {
     pub fn set_channel_scale(&mut self, channel: u32, volts_per_div: f64) -> Result<()> {
         self.session
             .scpi_mut()
-            .write(&scpi_commands::scope_set_channel_scale(channel, volts_per_div))
+            .write(&scpi_commands::scope_set_channel_scale(
+                channel,
+                volts_per_div,
+            ))
     }
 
     /// Enables or disables channel display.

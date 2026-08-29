@@ -321,4 +321,3 @@ pub fn dmm_configure_resistance_4wire(range: Option<f64>, resolution: Option<f64
         (None, None) => ":CONF:FRES".into(),
     }
 }
-

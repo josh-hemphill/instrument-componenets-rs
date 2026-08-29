@@ -1,6 +1,8 @@
 /**
  * Generate Rust + C# sources from capability_probes.toml and scpi_commands.toml.
  */
+import { rustfmtGenerated } from "./rustfmt-generated.ts";
+
 const root = new URL("..", import.meta.url);
 const probesToml = await Deno.readTextFile(
   new URL("crates/instrument-core/data/capability_probes.toml", root),
@@ -371,6 +373,7 @@ await Deno.writeTextFile(rustProbesPath, rustProbes);
 await Deno.writeTextFile(rustScpiPath, rustScpi);
 await Deno.writeTextFile(csProbesPath, csProbes);
 await Deno.writeTextFile(csScpiPath, csScpi);
+await rustfmtGenerated([rustProbesPath, rustScpiPath]);
 
 console.log("Wrote", rustProbesPath.pathname);
 console.log("Wrote", rustScpiPath.pathname);

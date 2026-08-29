@@ -44,7 +44,10 @@ impl AsyncOscilloscope {
     pub async fn set_channel_scale(&mut self, channel: u32, volts_per_div: f64) -> Result<()> {
         self.session
             .scpi_mut()
-            .write(&scpi_commands::scope_set_channel_scale(channel, volts_per_div))
+            .write(&scpi_commands::scope_set_channel_scale(
+                channel,
+                volts_per_div,
+            ))
             .await
     }
 
@@ -91,7 +94,10 @@ impl AsyncOscilloscope {
 
     /// Starts acquisition.
     pub async fn run(&mut self) -> Result<()> {
-        self.session.scpi_mut().write(scpi_commands::SCOPE_RUN).await
+        self.session
+            .scpi_mut()
+            .write(scpi_commands::SCOPE_RUN)
+            .await
     }
 
     /// Stops acquisition.

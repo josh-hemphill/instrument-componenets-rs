@@ -85,7 +85,10 @@ impl PowerMeter {
 
     /// Reads a measurement immediately (READ?).
     pub fn read(&mut self) -> Result<f64> {
-        let resp = self.session.scpi_mut().query(scpi_commands::PWRMETER_READ)?;
+        let resp = self
+            .session
+            .scpi_mut()
+            .query(scpi_commands::PWRMETER_READ)?;
         ScpiSession::parse_f64(&resp)
     }
 }
