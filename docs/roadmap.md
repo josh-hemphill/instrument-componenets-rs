@@ -1,12 +1,10 @@
 # Roadmap
 
-The previous “all class-depth phases complete; next is publishing” framing overstated readiness. Dual-native work now follows [dual-native-plan.md](dual-native-plan.md).
+Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A–D are merged (`latest`). Remaining work is session I/O honesty, dialect emission for the rest of the catalog, DMM/PSU transcripts, and self-hosted hardware smoke.
 
-## Historical (kept for context)
+**Still deferred:** package publishing (`0.2.0`), UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance, vendor VISA on GitHub-hosted CI.
 
-Parity / C# competitiveness and class-depth / docs-site phases landed as **API surface**, not as hardware-verified support. See the capability matrix for Base vs Extension rows and remaining `partial` / `todo` / `deferred` items.
-
-**Still deferred:** package publishing (`0.2.0`), UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance, self-hosted VISA runners.
+Neither NI nor Keysight ships a CI-loadable VISA/instrument emulator. GitHub-hosted CI stays on MockTransport + transcripts. See [Hardware emulators](dual-native-plan.md#hardware-emulators-ni--keysight).
 
 ```mermaid
 flowchart LR
@@ -14,7 +12,11 @@ flowchart LR
   B[B_session_honesty]
   C[C_shared_contracts]
   D[D_parity_docs]
-  A --> B --> C --> D
+  E[E_session_io_honesty]
+  F[F_dialect_remaining_classes]
+  G[G_dmm_psu_transcripts]
+  H[H_self_hosted_hardware]
+  A --> B --> C --> D --> E --> F --> G --> H
 ```
 
 Dialect profiles live under `crates/instrument-core/data/dialects/` and are generated via `tools/gen-dialects.ts`.
