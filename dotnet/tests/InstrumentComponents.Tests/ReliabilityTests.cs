@@ -1,6 +1,5 @@
 using InstrumentComponents.Connect;
 using InstrumentComponents.Errors;
-using InstrumentComponents.Ieee4882;
 using InstrumentComponents.Mock;
 using InstrumentComponents.Scpi;
 using InstrumentComponents.Transport;
@@ -47,7 +46,7 @@ public class ReliabilityTests
         var transport = new MockTransport([
             new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
             new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
-        ]).FailReads(2);
+        ]).FailReads(4);
 
         var opts = new ConnectOptions { Retries = 1, RetryBackoff = TimeSpan.FromMilliseconds(1), ReconnectOnFailure = false };
         var session = new ScpiSession(transport, opts);
@@ -63,7 +62,7 @@ public class ReliabilityTests
         ]);
         var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
         Assert.False(session.ProbeOpc());
-        new Ieee4882(session).WaitComplete();
+        new global::InstrumentComponents.Ieee4882.Ieee4882(session).WaitComplete();
     }
 
     [Fact]

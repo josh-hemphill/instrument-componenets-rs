@@ -69,7 +69,7 @@ impl AsyncScpiSession {
         let short = Duration::from_millis(50);
         let restore_to = self.opts.io_timeout();
         self.transport.set_read_timeout(short).await?;
-        let mut guard = IoTimeoutRestoreGuard {
+        let guard = IoTimeoutRestoreGuard {
             transport: &mut self.transport,
             timeout: restore_to,
         };
@@ -178,7 +178,7 @@ impl AsyncScpiSession {
     async fn read_response(&mut self, timeout: Duration) -> Result<Vec<u8>> {
         let restore_to = self.opts.io_timeout();
         self.transport.set_read_timeout(timeout).await?;
-        let mut guard = IoTimeoutRestoreGuard {
+        let guard = IoTimeoutRestoreGuard {
             transport: &mut self.transport,
             timeout: restore_to,
         };
@@ -322,10 +322,8 @@ async fn read_framed_response(
                         return Ok(payload);
                     }
                 }
-                if opts.reconnect_on_failure {
-                    if transport.reconnect().await.is_ok() {
-                        record_reconnect(diagnostics);
-                    }
+                if opts.reconnect_on_failure && transport.reconnect().await.is_ok() {
+                    record_reconnect(diagnostics);
                 }
                 record_failure(
                     diagnostics,

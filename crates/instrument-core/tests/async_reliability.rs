@@ -165,7 +165,8 @@ async fn query_read_retries_exhausted_is_timeout() {
             data: ":MEAS:VOLT:DC?\n".into(),
         },
     ])
-    .fail_reads(2);
+    // Two query attempts plus a flush read after each timed-out framed read.
+    .fail_reads(4);
 
     let mut session = AsyncScpiSession::new(Box::new(transport), retry_opts())
         .await
@@ -220,9 +221,10 @@ async fn zero_byte_read_is_timeout_without_spin() {
     let mut opts = retry_opts();
     opts.retries = 0;
     opts.read_timeout = Duration::from_secs(10);
-    let mut session = AsyncScpiSession::new(Box::new(ZeroByteTransport), opts)
-        .await
-        .unwrap();
+    let mut session =
+        AsyncScpiSession::new(Box::new(SyncAsAsyncTransport::new(ZeroByteTransport)), opts)
+            .await
+            .unwrap();
     let started = Instant::now();
     let err = session.query("*IDN?").await.unwrap_err();
     assert!(matches!(err, Error::Timeout));

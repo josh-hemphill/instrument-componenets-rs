@@ -47,7 +47,7 @@ public class AsyncReliabilityTests
         var transport = new MockTransport([
             new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
             new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
-        ]).FailReads(2);
+        ]).FailReads(4);
 
         var opts = new ConnectOptions { Retries = 1, RetryBackoff = TimeSpan.FromMilliseconds(1), ReconnectOnFailure = false };
         var session = await AsyncScpiSession.CreateAsync(transport, opts);

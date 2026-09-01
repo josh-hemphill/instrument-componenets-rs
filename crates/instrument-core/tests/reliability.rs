@@ -119,7 +119,8 @@ fn query_read_retries_exhausted_is_timeout() {
             data: ":MEAS:VOLT:DC?\n".into(),
         },
     ])
-    .fail_reads(2);
+    // Two query attempts plus a flush read after each timed-out framed read.
+    .fail_reads(4);
 
     let mut session = ScpiSession::new(Box::new(transport), retry_opts()).unwrap();
     let err = session.query(":MEAS:VOLT:DC?").unwrap_err();
