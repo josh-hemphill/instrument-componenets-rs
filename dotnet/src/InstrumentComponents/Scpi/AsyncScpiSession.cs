@@ -84,9 +84,30 @@ public sealed class AsyncScpiSession : IDisposable
 
     public async Task<string> QueryWithTimeoutAsync(string command, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        await WriteWithRetryAsync(command, idempotent: true, cancellationToken).ConfigureAwait(false);
-        var bytes = await ReadResponseAsync(timeout, cancellationToken).ConfigureAwait(false);
-        return Encoding.UTF8.GetString(bytes).Trim();
+        var maxAttempts = ScpiProtocol.MaxWriteAttempts(true, _opts.Retries);
+        uint attempts = 0;
+        while (true)
+        {
+            attempts++;
+            await WriteWithRetryAsync(command, idempotent: true, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var bytes = await ReadResponseAsync(timeout, cancellationToken).ConfigureAwait(false);
+                return Encoding.UTF8.GetString(bytes).Trim();
+            }
+            catch (InstrumentTimeoutException) when (attempts < maxAttempts)
+            {
+                try { await FlushAsync(CancellationToken.None).ConfigureAwait(false); } catch { }
+                if (_opts.ReconnectOnFailure)
+                    await TryReconnectAsync(cancellationToken).ConfigureAwait(false);
+                await Task.Delay(_opts.RetryBackoff * (int)attempts, cancellationToken).ConfigureAwait(false);
+            }
+            catch (InstrumentTimeoutException)
+            {
+                try { await FlushAsync(CancellationToken.None).ConfigureAwait(false); } catch { }
+                throw;
+            }
+        }
     }
 
     private async Task WriteWithRetryAsync(string command, bool idempotent, CancellationToken cancellationToken)
@@ -143,8 +164,18 @@ public sealed class AsyncScpiSession : IDisposable
                     var n = await _transport.ReadAsync(chunk, cancellationToken).ConfigureAwait(false);
                     if (n == 0)
                     {
-                        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
-                        continue;
+                        if (_readBuffer.Count > 0)
+                        {
+                            try
+                            {
+                                var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
+                                RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
+                                return payload;
+                            }
+                            catch (InstrumentTimeoutException) { }
+                        }
+                        RecordFailure(CommsEventKind.Timeout, command, 1, started, "zero-byte read");
+                        throw new InstrumentTimeoutException();
                     }
                     for (var i = 0; i < n; i++)
                         _readBuffer.Add(chunk[i]);
@@ -229,8 +260,8 @@ public sealed class AsyncScpiSession : IDisposable
         if (_systErrSupported is { } v) return v;
         try
         {
-            await QueryWithTimeoutAsync("SYST:ERR?", TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
-            _systErrSupported = true;
+            var resp = await QueryWithTimeoutAsync("SYST:ERR?", TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
+            _systErrSupported = ScpiProtocol.IsSystErrSupportedReply(resp);
         }
         catch
         {
@@ -244,8 +275,8 @@ public sealed class AsyncScpiSession : IDisposable
         if (_opcSupported is { } v) return v;
         try
         {
-            await QueryWithTimeoutAsync("*OPC?", TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
-            _opcSupported = true;
+            var resp = await QueryWithTimeoutAsync("*OPC?", TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
+            _opcSupported = ScpiProtocol.IsOpcSupportedReply(resp);
         }
         catch
         {

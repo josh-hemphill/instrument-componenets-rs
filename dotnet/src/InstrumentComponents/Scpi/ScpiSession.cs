@@ -75,9 +75,30 @@ public sealed class ScpiSession : IDisposable
 
     public string QueryWithTimeout(string command, TimeSpan timeout)
     {
-        WriteWithRetry(command, idempotent: true);
-        var bytes = ReadResponse(timeout);
-        return Encoding.UTF8.GetString(bytes).Trim();
+        var maxAttempts = ScpiProtocol.MaxWriteAttempts(true, _opts.Retries);
+        uint attempts = 0;
+        while (true)
+        {
+            attempts++;
+            WriteWithRetry(command, idempotent: true);
+            try
+            {
+                var bytes = ReadResponse(timeout);
+                return Encoding.UTF8.GetString(bytes).Trim();
+            }
+            catch (InstrumentTimeoutException) when (attempts < maxAttempts)
+            {
+                try { Flush(); } catch { /* best-effort drain */ }
+                if (_opts.ReconnectOnFailure)
+                    TryReconnect();
+                Thread.Sleep(_opts.RetryBackoff * (int)attempts);
+            }
+            catch (InstrumentTimeoutException)
+            {
+                try { Flush(); } catch { /* best-effort drain */ }
+                throw;
+            }
+        }
     }
 
     private void WriteWithRetry(string command, bool idempotent)
@@ -134,8 +155,18 @@ public sealed class ScpiSession : IDisposable
                     var n = _transport.Read(chunk);
                     if (n == 0)
                     {
-                        Thread.Sleep(1);
-                        continue;
+                        if (_readBuffer.Count > 0)
+                        {
+                            try
+                            {
+                                var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
+                                RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
+                                return payload;
+                            }
+                            catch (InstrumentTimeoutException) { /* incomplete frame */ }
+                        }
+                        RecordFailure(CommsEventKind.Timeout, command, 1, started, "zero-byte read");
+                        throw new InstrumentTimeoutException();
                     }
                     for (var i = 0; i < n; i++)
                         _readBuffer.Add(chunk[i]);
@@ -224,8 +255,8 @@ public sealed class ScpiSession : IDisposable
         if (_systErrSupported is { } v) return v;
         try
         {
-            _ = QueryWithTimeout("SYST:ERR?", TimeSpan.FromMilliseconds(500));
-            _systErrSupported = true;
+            var resp = QueryWithTimeout("SYST:ERR?", TimeSpan.FromMilliseconds(500));
+            _systErrSupported = ScpiProtocol.IsSystErrSupportedReply(resp);
         }
         catch
         {
@@ -239,8 +270,8 @@ public sealed class ScpiSession : IDisposable
         if (_opcSupported is { } v) return v;
         try
         {
-            QueryWithTimeout("*OPC?", TimeSpan.FromMilliseconds(500));
-            _opcSupported = true;
+            var resp = QueryWithTimeout("*OPC?", TimeSpan.FromMilliseconds(500));
+            _opcSupported = ScpiProtocol.IsOpcSupportedReply(resp);
         }
         catch
         {

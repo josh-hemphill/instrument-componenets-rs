@@ -1,11 +1,26 @@
 use super::framing::extract_response;
-use super::protocol::{max_write_attempts, normalize_command, parse_f64, SessionCapabilities};
+use super::protocol::{
+    is_opc_supported_reply, is_syst_err_supported_reply, max_write_attempts, normalize_command,
+    parse_f64, SessionCapabilities,
+};
 use crate::async_transport::{AsyncTransport, DynAsyncTransport};
 use crate::connect::ConnectOptions;
 use crate::diagnostics::{CommsEventKind, Diagnostics};
 use crate::error::{Error, Result};
 use crate::ieee4882::AsyncIeee4882;
 use std::time::{Duration, Instant};
+
+/// Restores I/O timeout on drop so cancel cannot leave a short VISA timeout.
+struct IoTimeoutRestoreGuard<'a> {
+    transport: &'a mut DynAsyncTransport,
+    timeout: Duration,
+}
+
+impl Drop for IoTimeoutRestoreGuard<'_> {
+    fn drop(&mut self) {
+        let _ = self.transport.apply_read_timeout(self.timeout);
+    }
+}
 
 /// Async SCPI session over a boxed transport.
 pub struct AsyncScpiSession {
@@ -52,24 +67,13 @@ impl AsyncScpiSession {
     /// Drains pending bytes from the transport read buffer.
     pub async fn flush(&mut self) -> Result<()> {
         let short = Duration::from_millis(50);
+        let restore_to = self.opts.io_timeout();
         self.transport.set_read_timeout(short).await?;
-        let result = self.drain_read_buffer().await;
-        let _ = self.restore_io_timeout().await;
-        result
-    }
-
-    async fn drain_read_buffer(&mut self) -> Result<()> {
-        let mut chunk = [0u8; 256];
-        loop {
-            match self.transport.read(&mut chunk).await {
-                Ok(0) => break,
-                Ok(_) => continue,
-                Err(Error::Timeout) => break,
-                Err(e) => return Err(e),
-            }
-        }
-        self.read_buffer.clear();
-        Ok(())
+        let mut guard = IoTimeoutRestoreGuard {
+            transport: &mut self.transport,
+            timeout: restore_to,
+        };
+        drain_read_buffer(&mut *guard.transport, &mut self.read_buffer).await
     }
 
     /// Writes a command without expecting a response.
@@ -84,9 +88,29 @@ impl AsyncScpiSession {
     }
 
     pub async fn query_with_timeout(&mut self, command: &str, timeout: Duration) -> Result<String> {
-        self.write_with_retry(command, true).await?;
-        let bytes = self.read_response(timeout).await?;
-        Ok(String::from_utf8_lossy(&bytes).trim().to_string())
+        let max_attempts = max_write_attempts(true, self.opts.retries);
+        let mut attempts = 0;
+        loop {
+            attempts += 1;
+            self.write_with_retry(command, true).await?;
+            match self.read_response(timeout).await {
+                Ok(bytes) => {
+                    return Ok(String::from_utf8_lossy(&bytes).trim().to_string());
+                }
+                Err(Error::Timeout) if attempts < max_attempts => {
+                    let _ = self.flush().await;
+                    if self.opts.reconnect_on_failure {
+                        self.try_reconnect().await;
+                    }
+                    tokio::time::sleep(self.opts.retry_backoff * attempts).await;
+                }
+                Err(Error::Timeout) => {
+                    let _ = self.flush().await;
+                    return Err(Error::Timeout);
+                }
+                Err(e) => return Err(e),
+            }
+        }
     }
 
     async fn write_with_retry(&mut self, command: &str, idempotent: bool) -> Result<()> {
@@ -102,11 +126,18 @@ impl AsyncScpiSession {
             self.pending_command = Some(command.to_string());
             match self.transport.write(data).await {
                 Ok(()) => {
-                    self.record_success(CommsEventKind::WriteOk, Some(command), attempts, started);
+                    record_success(
+                        &self.diagnostics,
+                        CommsEventKind::WriteOk,
+                        Some(command),
+                        attempts,
+                        started,
+                    );
                     return Ok(());
                 }
                 Err(Error::Timeout) if attempts < max_attempts => {
-                    self.record_failure(
+                    record_failure(
+                        &self.diagnostics,
                         CommsEventKind::Timeout,
                         Some(command),
                         attempts,
@@ -119,7 +150,8 @@ impl AsyncScpiSession {
                     tokio::time::sleep(self.opts.retry_backoff).await;
                 }
                 Err(Error::Timeout) => {
-                    self.record_failure(
+                    record_failure(
+                        &self.diagnostics,
                         CommsEventKind::Timeout,
                         Some(command),
                         attempts,
@@ -129,7 +161,8 @@ impl AsyncScpiSession {
                     return Err(Error::Timeout);
                 }
                 Err(e) => {
-                    self.record_failure(
+                    record_failure(
+                        &self.diagnostics,
                         CommsEventKind::WriteFailed,
                         Some(command),
                         attempts,
@@ -143,105 +176,20 @@ impl AsyncScpiSession {
     }
 
     async fn read_response(&mut self, timeout: Duration) -> Result<Vec<u8>> {
+        let restore_to = self.opts.io_timeout();
         self.transport.set_read_timeout(timeout).await?;
-        let result = self.read_framed_response().await;
-        let _ = self.restore_io_timeout().await;
-        result
-    }
-
-    async fn read_framed_response(&mut self) -> Result<Vec<u8>> {
-        self.read_buffer.clear();
-        let command = self.pending_command.clone();
-
-        let mut chunk = [0u8; 1024];
-        loop {
-            let started = Instant::now();
-            match self.transport.read(&mut chunk).await {
-                Ok(0) => tokio::time::sleep(Duration::from_millis(1)).await,
-                Ok(n) => {
-                    self.read_buffer.extend_from_slice(&chunk[..n]);
-                    if let Ok((payload, _)) =
-                        extract_response(&self.read_buffer, &self.opts.terminator)
-                    {
-                        self.record_success(CommsEventKind::ReadOk, command.as_deref(), 1, started);
-                        return Ok(payload);
-                    }
-                }
-                Err(Error::Timeout) => {
-                    if !self.read_buffer.is_empty() {
-                        if let Ok((payload, _)) =
-                            extract_response(&self.read_buffer, &self.opts.terminator)
-                        {
-                            self.record_success(
-                                CommsEventKind::ReadOk,
-                                command.as_deref(),
-                                1,
-                                started,
-                            );
-                            return Ok(payload);
-                        }
-                    }
-                    if self.opts.reconnect_on_failure {
-                        self.try_reconnect().await;
-                    }
-                    self.record_failure(
-                        CommsEventKind::Timeout,
-                        command.as_deref(),
-                        1,
-                        started,
-                        "read timeout",
-                    );
-                    return Err(Error::Timeout);
-                }
-                Err(e) => {
-                    self.record_failure(
-                        CommsEventKind::ReadFailed,
-                        command.as_deref(),
-                        1,
-                        started,
-                        &e.to_string(),
-                    );
-                    return Err(e);
-                }
-            }
-        }
-    }
-
-    fn record_success(
-        &self,
-        kind: CommsEventKind,
-        command: Option<&str>,
-        attempt: u32,
-        started: Instant,
-    ) {
-        if let Some(diag) = &self.diagnostics {
-            diag.record_success(kind, command, attempt, started.elapsed());
-        }
-    }
-
-    fn record_failure(
-        &self,
-        kind: CommsEventKind,
-        command: Option<&str>,
-        attempt: u32,
-        started: Instant,
-        detail: &str,
-    ) {
-        if let Some(diag) = &self.diagnostics {
-            diag.record_failure(kind, command, attempt, started.elapsed(), detail);
-        }
-    }
-
-    fn record_reconnect(&self) {
-        if let Some(diag) = &self.diagnostics {
-            diag.record_success(CommsEventKind::Reconnect, None, 1, Duration::ZERO);
-        }
-    }
-
-    async fn try_reconnect(&mut self) {
-        if self.transport.reconnect().await.is_ok() {
-            self.record_reconnect();
-        }
+        let mut guard = IoTimeoutRestoreGuard {
+            transport: &mut self.transport,
+            timeout: restore_to,
+        };
+        read_framed_response(
+            &mut *guard.transport,
+            &mut self.read_buffer,
+            &self.opts,
+            self.pending_command.as_deref(),
+            &self.diagnostics,
+        )
+        .await
     }
 
     fn effective_read_timeout(&self) -> Duration {
@@ -255,6 +203,12 @@ impl AsyncScpiSession {
             .await
     }
 
+    async fn try_reconnect(&mut self) {
+        if self.transport.reconnect().await.is_ok() {
+            record_reconnect(&self.diagnostics);
+        }
+    }
+
     /// Probes and caches whether SYST:ERR? is supported.
     pub async fn probe_syst_err(&mut self) -> bool {
         if let Some(v) = self.capabilities.syst_err {
@@ -263,7 +217,8 @@ impl AsyncScpiSession {
         let supported = self
             .query_with_timeout("SYST:ERR?", Duration::from_millis(500))
             .await
-            .is_ok();
+            .ok()
+            .is_some_and(|resp| is_syst_err_supported_reply(&resp));
         self.capabilities.syst_err = Some(supported);
         supported
     }
@@ -276,7 +231,8 @@ impl AsyncScpiSession {
         let supported = self
             .query_with_timeout("*OPC?", Duration::from_millis(500))
             .await
-            .is_ok();
+            .ok()
+            .is_some_and(|resp| is_opc_supported_reply(&resp));
         self.capabilities.opc = Some(supported);
         supported
     }
@@ -303,5 +259,126 @@ impl AsyncScpiSession {
     /// Parses a numeric SCPI response.
     pub fn parse_f64(response: &str) -> Result<f64> {
         parse_f64(response)
+    }
+}
+
+async fn drain_read_buffer(
+    transport: &mut DynAsyncTransport,
+    read_buffer: &mut Vec<u8>,
+) -> Result<()> {
+    let mut chunk = [0u8; 256];
+    loop {
+        match transport.read(&mut chunk).await {
+            Ok(0) => break,
+            Ok(_) => continue,
+            Err(Error::Timeout) => break,
+            Err(e) => return Err(e),
+        }
+    }
+    read_buffer.clear();
+    Ok(())
+}
+
+async fn read_framed_response(
+    transport: &mut DynAsyncTransport,
+    read_buffer: &mut Vec<u8>,
+    opts: &ConnectOptions,
+    command: Option<&str>,
+    diagnostics: &Option<Diagnostics>,
+) -> Result<Vec<u8>> {
+    read_buffer.clear();
+    let mut chunk = [0u8; 1024];
+    loop {
+        let started = Instant::now();
+        match transport.read(&mut chunk).await {
+            Ok(0) => {
+                if !read_buffer.is_empty() {
+                    if let Ok((payload, _)) = extract_response(read_buffer, &opts.terminator) {
+                        record_success(diagnostics, CommsEventKind::ReadOk, command, 1, started);
+                        return Ok(payload);
+                    }
+                }
+                record_failure(
+                    diagnostics,
+                    CommsEventKind::Timeout,
+                    command,
+                    1,
+                    started,
+                    "zero-byte read",
+                );
+                return Err(Error::Timeout);
+            }
+            Ok(n) => {
+                read_buffer.extend_from_slice(&chunk[..n]);
+                if let Ok((payload, _)) = extract_response(read_buffer, &opts.terminator) {
+                    record_success(diagnostics, CommsEventKind::ReadOk, command, 1, started);
+                    return Ok(payload);
+                }
+            }
+            Err(Error::Timeout) => {
+                if !read_buffer.is_empty() {
+                    if let Ok((payload, _)) = extract_response(read_buffer, &opts.terminator) {
+                        record_success(diagnostics, CommsEventKind::ReadOk, command, 1, started);
+                        return Ok(payload);
+                    }
+                }
+                if opts.reconnect_on_failure {
+                    if transport.reconnect().await.is_ok() {
+                        record_reconnect(diagnostics);
+                    }
+                }
+                record_failure(
+                    diagnostics,
+                    CommsEventKind::Timeout,
+                    command,
+                    1,
+                    started,
+                    "read timeout",
+                );
+                return Err(Error::Timeout);
+            }
+            Err(e) => {
+                record_failure(
+                    diagnostics,
+                    CommsEventKind::ReadFailed,
+                    command,
+                    1,
+                    started,
+                    &e.to_string(),
+                );
+                return Err(e);
+            }
+        }
+    }
+}
+
+fn record_success(
+    diagnostics: &Option<Diagnostics>,
+    kind: CommsEventKind,
+    command: Option<&str>,
+    attempt: u32,
+    started: Instant,
+) {
+    if let Some(diag) = diagnostics {
+        diag.record_success(kind, command, attempt, started.elapsed());
+    }
+}
+
+fn record_failure(
+    diagnostics: &Option<Diagnostics>,
+    kind: CommsEventKind,
+    command: Option<&str>,
+    attempt: u32,
+    started: Instant,
+    detail: &str,
+) {
+    if let Some(diag) = diagnostics {
+        diag.record_failure(kind, command, attempt, started.elapsed(), detail);
+    }
+}
+
+fn record_reconnect(diagnostics: &Option<Diagnostics>) {
+    if let Some(diag) = diagnostics {
+        diag.record_success(CommsEventKind::Reconnect, None, 1, Duration::ZERO);
     }
 }

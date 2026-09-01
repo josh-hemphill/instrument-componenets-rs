@@ -36,6 +36,11 @@ pub struct ConnectOptions {
     pub reset_on_connect: bool,
     pub retries: u32,
     pub retry_backoff: Duration,
+    /// When true, timed-out writes/queries call [`crate::transport::Transport::reconnect`].
+    ///
+    /// VISA backends return [`crate::error::Error::Unsupported`]; `try_reconnect` swallows
+    /// that so write/query retry still runs. TCP reconnect needs a SOCKET transport
+    /// (not VISA). Default stays true so a future reconnectable transport is opted in.
     pub reconnect_on_failure: bool,
 }
 

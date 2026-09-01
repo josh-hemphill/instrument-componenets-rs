@@ -98,11 +98,13 @@ impl AsyncTransport for VisaAsyncTransport {
         &'a mut self,
         timeout: Duration,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {
-        Box::pin(async move {
-            let attr = AttrTmoValue::new_checked(visa_timeout_ms(timeout))
-                .ok_or_else(|| Error::Parse("invalid VISA timeout value".into()))?;
-            self.with_sync_instrument(move |instr| instr.set_attr(attr))
-        })
+        Box::pin(async move { self.apply_read_timeout(timeout) })
+    }
+
+    fn apply_read_timeout(&mut self, timeout: Duration) -> Result<()> {
+        let attr = AttrTmoValue::new_checked(visa_timeout_ms(timeout))
+            .ok_or_else(|| Error::Parse("invalid VISA timeout value".into()))?;
+        self.with_sync_instrument(move |instr| instr.set_attr(attr))
     }
 
     fn identity(&self) -> TransportIdentity {

@@ -1,5 +1,8 @@
 use super::framing::extract_response;
-use super::protocol::{max_write_attempts, normalize_command, parse_f64, SessionCapabilities};
+use super::protocol::{
+    is_opc_supported_reply, is_syst_err_supported_reply, max_write_attempts, normalize_command,
+    parse_f64, SessionCapabilities,
+};
 use crate::connect::ConnectOptions;
 use crate::diagnostics::{CommsEventKind, Diagnostics};
 use crate::error::{Error, Result};
@@ -84,9 +87,29 @@ impl ScpiSession {
     }
 
     pub fn query_with_timeout(&mut self, command: &str, timeout: Duration) -> Result<String> {
-        self.write_with_retry(command, true)?;
-        let bytes = self.read_response(timeout)?;
-        Ok(String::from_utf8_lossy(&bytes).trim().to_string())
+        let max_attempts = max_write_attempts(true, self.opts.retries);
+        let mut attempts = 0;
+        loop {
+            attempts += 1;
+            self.write_with_retry(command, true)?;
+            match self.read_response(timeout) {
+                Ok(bytes) => {
+                    return Ok(String::from_utf8_lossy(&bytes).trim().to_string());
+                }
+                Err(Error::Timeout) if attempts < max_attempts => {
+                    let _ = self.flush();
+                    if self.opts.reconnect_on_failure {
+                        self.try_reconnect();
+                    }
+                    thread::sleep(self.opts.retry_backoff * attempts);
+                }
+                Err(Error::Timeout) => {
+                    let _ = self.flush();
+                    return Err(Error::Timeout);
+                }
+                Err(e) => return Err(e),
+            }
+        }
     }
 
     fn write_with_retry(&mut self, command: &str, idempotent: bool) -> Result<()> {
@@ -157,7 +180,29 @@ impl ScpiSession {
         loop {
             let started = Instant::now();
             match self.transport.read(&mut chunk) {
-                Ok(0) => thread::sleep(Duration::from_millis(1)),
+                Ok(0) => {
+                    if !self.read_buffer.is_empty() {
+                        if let Ok((payload, _)) =
+                            extract_response(&self.read_buffer, &self.opts.terminator)
+                        {
+                            self.record_success(
+                                CommsEventKind::ReadOk,
+                                command.as_deref(),
+                                1,
+                                started,
+                            );
+                            return Ok(payload);
+                        }
+                    }
+                    self.record_failure(
+                        CommsEventKind::Timeout,
+                        command.as_deref(),
+                        1,
+                        started,
+                        "zero-byte read",
+                    );
+                    return Err(Error::Timeout);
+                }
                 Ok(n) => {
                     self.read_buffer.extend_from_slice(&chunk[..n]);
                     if let Ok((payload, _)) =
@@ -260,7 +305,8 @@ impl ScpiSession {
         }
         let supported = self
             .query_with_timeout("SYST:ERR?", Duration::from_millis(500))
-            .is_ok();
+            .ok()
+            .is_some_and(|resp| is_syst_err_supported_reply(&resp));
         self.capabilities.syst_err = Some(supported);
         supported
     }
@@ -272,7 +318,8 @@ impl ScpiSession {
         }
         let supported = self
             .query_with_timeout("*OPC?", Duration::from_millis(500))
-            .is_ok();
+            .ok()
+            .is_some_and(|resp| is_opc_supported_reply(&resp));
         self.capabilities.opc = Some(supported);
         supported
     }

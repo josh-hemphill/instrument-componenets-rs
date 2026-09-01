@@ -1,5 +1,6 @@
 using InstrumentComponents.Connect;
 using InstrumentComponents.Errors;
+using InstrumentComponents.Ieee4882;
 using InstrumentComponents.Mock;
 using InstrumentComponents.Scpi;
 using InstrumentComponents.Transport;
@@ -22,6 +23,104 @@ public class ReliabilityTests
         var session = new ScpiSession(transport, opts);
         var volts = session.Query(":MEAS:VOLT:DC?");
         Assert.Equal("1.0", volts.Trim());
+    }
+
+    [Fact]
+    public void QueryRetriesReadTimeoutFlushesStaleThenSucceeds()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+            new ReadStep { Data = "1.0\n" },
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+            new ReadStep { Data = "3.3\n" },
+        ]).FailReads(1);
+
+        var opts = new ConnectOptions { Retries = 1, RetryBackoff = TimeSpan.FromMilliseconds(1), ReconnectOnFailure = false };
+        var session = new ScpiSession(transport, opts);
+        var volts = session.Query(":MEAS:VOLT:DC?");
+        Assert.Equal("3.3", volts.Trim());
+    }
+
+    [Fact]
+    public void QueryReadRetriesExhaustedIsTimeout()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+        ]).FailReads(2);
+
+        var opts = new ConnectOptions { Retries = 1, RetryBackoff = TimeSpan.FromMilliseconds(1), ReconnectOnFailure = false };
+        var session = new ScpiSession(transport, opts);
+        Assert.Throws<InstrumentTimeoutException>(() => session.Query(":MEAS:VOLT:DC?"));
+    }
+
+    [Fact]
+    public void ProbeOpcUndefinedHeaderIsUnsupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "*OPC?\n" },
+            new ReadStep { Data = "-113,\"Undefined header\"\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.False(session.ProbeOpc());
+        new Ieee4882(session).WaitComplete();
+    }
+
+    [Fact]
+    public void ProbeOpcOneIsSupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "*OPC?\n" },
+            new ReadStep { Data = "1\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.True(session.ProbeOpc());
+    }
+
+    [Fact]
+    public void ProbeSystErrOkIsUnsupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "SYST:ERR?\n" },
+            new ReadStep { Data = "OK\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.False(session.ProbeSystErr());
+    }
+
+    [Fact]
+    public void ProbeSystErrNoErrorIsSupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "SYST:ERR?\n" },
+            new ReadStep { Data = "0,\"No error\"\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.True(session.ProbeSystErr());
+    }
+
+    [Fact]
+    public void ZeroByteReadIsTimeoutWithoutSpin()
+    {
+        var session = new ScpiSession(new ZeroByteTransport(), new ConnectOptions
+        {
+            Retries = 0,
+            ReconnectOnFailure = false,
+            ReadTimeout = TimeSpan.FromSeconds(10),
+        });
+        var started = DateTime.UtcNow;
+        Assert.Throws<InstrumentTimeoutException>(() => session.Query("*IDN?"));
+        Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(2), "zero-byte read spun instead of failing closed");
+    }
+
+    [Fact]
+    public void OpcAndSystErrReplyParsers()
+    {
+        Assert.True(ScpiProtocol.IsOpcSupportedReply("1"));
+        Assert.True(ScpiProtocol.IsOpcSupportedReply("+1"));
+        Assert.False(ScpiProtocol.IsOpcSupportedReply("-113,\"Undefined header\""));
+        Assert.True(ScpiProtocol.IsSystErrSupportedReply("0,\"No error\""));
+        Assert.False(ScpiProtocol.IsSystErrSupportedReply("OK"));
     }
 
     [Fact]
@@ -111,6 +210,14 @@ public class ReliabilityTests
         var transport = new OpcThenFailRestoreTransport();
         var session = new ScpiSession(transport, new ConnectOptions { ReconnectOnFailure = false });
         Assert.True(session.ProbeOpc());
+    }
+
+    private sealed class ZeroByteTransport : TransportBase
+    {
+        public override void Write(ReadOnlySpan<byte> data) { }
+        public override int Read(Span<byte> buffer) => 0;
+        public override void Clear() { }
+        public override void SetReadTimeout(TimeSpan timeout) { }
     }
 
     private sealed class ThrowOnTimeoutRestoreTransport : TransportBase

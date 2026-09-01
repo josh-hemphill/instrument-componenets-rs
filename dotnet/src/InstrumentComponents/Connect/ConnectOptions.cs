@@ -12,6 +12,10 @@ public sealed class ConnectOptions
     public bool ResetOnConnect { get; set; }
     public uint Retries { get; set; } = 2;
     public TimeSpan RetryBackoff { get; set; } = TimeSpan.FromMilliseconds(100);
+    /// <summary>
+    /// When true, timed-out writes/queries call reconnect. VISA backends return
+    /// unsupported; retry still runs. TCP reconnect needs a SOCKET transport (not VISA).
+    /// </summary>
     public bool ReconnectOnFailure { get; set; } = true;
 
     /// <summary>Single I/O timeout for backends (VISA) that cannot split read vs write.</summary>

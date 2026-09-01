@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Queries retry the write+read pair after a timed-out read, flushing stale data first
+- `*OPC?` / `SYST:ERR?` probes cache support only for real OPC (`1`/`+1`) and SCPI error-queue (`code,message`) replies
+- Framed reads treat a successful 0-byte `read` as timeout instead of spinning
+- Rust async sessions restore I/O timeout if the query/flush future is dropped (cancel)
+- `reconnect_on_failure` documents that VISA reconnect is unsupported; retry still runs
 - Canonical GitHub and GitHub Pages URLs are `josh-hemphill/instrument-components` (not the misspelled `instrument-componenets-rs`)
 - Docs and examples depend on `0.1` plus git/`latest` for unreleased async APIs, not a non-existent `0.2` crate
 - Generated dialect and SCPI tables now match `cargo fmt` so CI's format check passes

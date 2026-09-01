@@ -14,6 +14,7 @@ public sealed class MockTransport : TransportBase, IAsyncTransport
     private int _stepIndex;
     private TransportIdentity _identity = new();
     private uint _failWritesRemaining;
+    private uint _failReadsRemaining;
 
     public MockTransport(IReadOnlyList<ScriptStep> steps)
     {
@@ -23,7 +24,12 @@ public sealed class MockTransport : TransportBase, IAsyncTransport
 
     public MockTransport Reopen()
     {
-        var t = new MockTransport(_script) { _identity = _identity, _failWritesRemaining = _failWritesRemaining };
+        var t = new MockTransport(_script)
+        {
+            _identity = _identity,
+            _failWritesRemaining = _failWritesRemaining,
+            _failReadsRemaining = _failReadsRemaining,
+        };
         return t;
     }
 
@@ -39,6 +45,20 @@ public sealed class MockTransport : TransportBase, IAsyncTransport
     {
         _failWritesRemaining = count;
         return this;
+    }
+
+    /// <summary>Fails the next N reads with timeout without consuming a script step.</summary>
+    public MockTransport FailReads(uint count)
+    {
+        _failReadsRemaining = count;
+        return this;
+    }
+
+    private ScriptStep PeekStep()
+    {
+        if (_stepIndex >= _steps.Count)
+            throw new MockExhaustedException();
+        return _steps[_stepIndex];
     }
 
     private ScriptStep NextStep()
@@ -69,6 +89,15 @@ public sealed class MockTransport : TransportBase, IAsyncTransport
 
     public override int Read(Span<byte> buffer)
     {
+        if (_failReadsRemaining > 0)
+        {
+            _failReadsRemaining--;
+            throw new InstrumentTimeoutException();
+        }
+
+        if (PeekStep() is not ReadStep)
+            throw new InstrumentTimeoutException();
+
         var step = NextStep();
         if (step is ReadStep rs)
         {
