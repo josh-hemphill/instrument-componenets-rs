@@ -1,7 +1,55 @@
 //! Integration tests requiring NI-VISA or Keysight VISA installed.
+//!
+//! GitHub-hosted CI never enables the `visa` feature for these tests.
+//! The self-hosted `Hardware smoke` workflow runs `dmm_measure_voltage_dc_smoke`
+//! with `INSTRUMENT_RESOURCE` set to one DMM.
 #![cfg(feature = "visa")]
 
 use instrument::prelude::*;
+use instrument_core::{ModelRegistry, StaticEnumerator};
+use instrument_visa::{SharedRm, VisaSessionOpener};
+use std::sync::Arc;
+
+const RESOURCE_ENV: &str = "INSTRUMENT_RESOURCE";
+
+fn require_instrument_resource() -> String {
+    let raw = std::env::var(RESOURCE_ENV).unwrap_or_default();
+    let trimmed = raw.trim();
+    assert!(
+        !trimmed.is_empty(),
+        "{RESOURCE_ENV} must be set to a VISA resource string"
+    );
+    ResourceAddress::parse(trimmed)
+        .unwrap_or_else(|e| panic!("{RESOURCE_ENV} is not a valid VISA address ({trimmed}): {e}"));
+    trimmed.to_string()
+}
+
+fn catalog_for_resource(resource: &str) -> DeviceCatalog {
+    let rm = SharedRm::new().expect("VISA resource manager");
+    let opener = Arc::new(VisaSessionOpener::new(rm));
+    let enumerator = Arc::new(
+        StaticEnumerator::from_addresses([resource.to_string()])
+            .expect("INSTRUMENT_RESOURCE parses"),
+    );
+    Discovery::new(enumerator, opener, ModelRegistry::embedded())
+        .probe_policy(ProbePolicy::ReadOnly)
+        .scan()
+        .expect("scan INSTRUMENT_RESOURCE")
+}
+
+fn device_for_resource(catalog: &DeviceCatalog, resource: &str) -> DeviceRef {
+    if let Ok(dev) = catalog.device(resource) {
+        return dev;
+    }
+    let wanted = ResourceAddress::parse(resource).expect("valid resource");
+    let raw = catalog
+        .devices()
+        .iter()
+        .find(|d| d.address.dedup_key() == wanted.dedup_key())
+        .map(|d| d.address.raw.clone())
+        .unwrap_or_else(|| panic!("{RESOURCE_ENV} not in catalog: {resource}"));
+    catalog.device(&raw).expect("matched INSTRUMENT_RESOURCE")
+}
 
 #[test]
 #[ignore = "requires VISA runtime and connected instruments"]
@@ -40,4 +88,37 @@ fn idn_round_trip_on_first_reachable_device() {
         .open_session()
         .unwrap();
     let _idn = session.idn().expect("idn round-trip");
+}
+
+#[test]
+#[ignore = "requires VISA runtime and INSTRUMENT_RESOURCE"]
+fn dmm_measure_voltage_dc_smoke() {
+    let resource = require_instrument_resource();
+    let catalog = catalog_for_resource(&resource);
+    let device = device_for_resource(&catalog, &resource);
+    let discovered = device.discovered();
+    assert!(
+        discovered.reachable,
+        "{RESOURCE_ENV} is not reachable ({resource}): {:?}",
+        discovered.error
+    );
+    assert!(
+        discovered.supported_kinds.contains(&InstrumentKind::Dmm),
+        "{RESOURCE_ENV} is not classified as a DMM (kinds {:?}, model {:?})",
+        discovered.supported_kinds,
+        discovered.identity.model
+    );
+
+    let mut dmm = device.open_dmm().expect("open DMM");
+    let volts = dmm.measure_voltage_dc(None).expect("measure DC voltage");
+    assert!(
+        volts.is_finite(),
+        "DMM reading was not finite: {volts} (model {:?})",
+        discovered.identity.model
+    );
+    eprintln!(
+        "hardware smoke: {} {} @ {resource} → {volts} V DC",
+        discovered.identity.manufacturer.as_deref().unwrap_or("?"),
+        discovered.identity.model.as_deref().unwrap_or("?"),
+    );
 }
