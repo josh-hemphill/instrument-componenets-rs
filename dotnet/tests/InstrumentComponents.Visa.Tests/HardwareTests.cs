@@ -1,12 +1,12 @@
 using InstrumentComponents.Address;
 using InstrumentComponents.Catalog;
 using InstrumentComponents.Device;
-using InstrumentComponents.Discovery;
 using InstrumentComponents.Enumerator;
 using InstrumentComponents.Errors;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Registry;
 using InstrumentComponents.Visa;
+using DiscoveryBuilder = InstrumentComponents.Discovery.Discovery;
 
 namespace InstrumentComponents.Visa.Tests;
 
@@ -26,7 +26,7 @@ public class HardwareTests
     {
         Assert.True(HardwareResource.TryFromEnv(out var resource, out var error), error);
         var opener = new VisaSessionOpener();
-        var catalog = new Discovery(
+        var catalog = new DiscoveryBuilder(
             StaticEnumerator.FromAddresses([resource]),
             opener,
             ModelRegistry.Embedded(),
