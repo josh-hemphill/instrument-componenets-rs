@@ -20,3 +20,9 @@ fn loads_scope_switch_counter_fixtures() {
     assert_eq!(load_fixture("switch_34970a.json").steps.len(), 2);
     assert_eq!(load_fixture("counter_53230a.json").steps.len(), 2);
 }
+
+#[test]
+fn loads_dmm_psu_vendor_fixtures() {
+    assert_eq!(load_fixture("dmm_dmm6500.json").steps.len(), 4);
+    assert_eq!(load_fixture("psu_n6705c.json").steps.len(), 4);
+}

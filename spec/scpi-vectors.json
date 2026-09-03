@@ -69,6 +69,27 @@
       "manufacturer": "TestDialect Corp",
       "model": "PSU-X",
       "expectedProfile": "ci_psu_dialect_wins"
+    },
+    {
+      "id": "keithley-dmm6500",
+      "kind": "Dmm",
+      "manufacturer": "Keithley Instruments",
+      "model": "DMM6500",
+      "expectedProfile": "keithley_dmm6500"
+    },
+    {
+      "id": "keysight-n6705c",
+      "kind": "DcPowerSupply",
+      "manufacturer": "Keysight Technologies",
+      "model": "N6705C",
+      "expectedProfile": "keysight_n6705c"
+    },
+    {
+      "id": "generic-dcpwr",
+      "kind": "DcPowerSupply",
+      "manufacturer": "Keysight Technologies",
+      "model": "E36312A",
+      "expectedProfile": "generic_dcpwr"
     }
   ],
   "dialectCommands": [
@@ -135,6 +156,14 @@
       "model": "DMM-X",
       "key": "measure_voltage_dc",
       "command": ":MEAS:VOLT:DC:TEST?"
+    },
+    {
+      "id": "keithley-dmm6500-measure",
+      "kind": "Dmm",
+      "manufacturer": "Keithley Instruments",
+      "model": "DMM6500",
+      "key": "measure_voltage_dc",
+      "command": ":SENS:FUNC \"VOLT:DC\";:READ?"
     }
   ],
   "formattedCommands": [
@@ -173,6 +202,15 @@
       "key": "set_voltage",
       "vars": { "channel": "1", "volts": "3.3" },
       "command": ":VOLT 3.3,(@1)"
+    },
+    {
+      "id": "keysight-n6705c-set-voltage",
+      "kind": "DcPowerSupply",
+      "manufacturer": "Keysight Technologies",
+      "model": "N6705C",
+      "key": "set_voltage",
+      "vars": { "channel": "1", "volts": "3.3" },
+      "command": ":VOLT 3.3, (@1)"
     }
   ]
 }
