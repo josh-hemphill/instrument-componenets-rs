@@ -1,14 +1,10 @@
 /**
- * Generate Rust + C# dialect profile tables from data/dialects/profiles.toml.
+ * Generate Rust + C# dialect profile tables from data/dialects/profiles.toml
+ * and spec/vendors/*.json. Vendor JSON is inserted before catch-all generic_*.
  */
 import { rustfmtGenerated } from "./rustfmt-generated.ts";
 
 const root = new URL("..", import.meta.url);
-const tomlPath = new URL(
-  "crates/instrument-core/data/dialects/profiles.toml",
-  root,
-);
-const text = await Deno.readTextFile(tomlPath);
 
 interface Profile {
   id: string;
@@ -19,40 +15,16 @@ interface Profile {
   commands: Record<string, string>;
 }
 
-const profiles: Profile[] = [];
-let current: Partial<Profile> | null = null;
-let inCommands = false;
-
-for (const raw of text.split("\n")) {
-  const line = raw.trim();
-  if (!line || line.startsWith("#")) continue;
-  if (line === "[[profile]]") {
-    if (current?.id) profiles.push(current as Profile);
-    current = { commands: {}, channels: 1 };
-    inCommands = false;
-    continue;
-  }
-  if (line === "[profile.commands]") {
-    inCommands = true;
-    continue;
-  }
-  if (line.startsWith("[")) {
-    inCommands = false;
-    continue;
-  }
-  const eq = line.indexOf("=");
-  if (eq < 0 || !current) continue;
-  const key = line.slice(0, eq).trim();
-  const value = unescapeTomlString(line.slice(eq + 1).trim());
-  if (inCommands) {
-    current.commands![key] = value;
-  } else if (key === "channels") {
-    current.channels = Number(value);
-  } else {
-    (current as Record<string, unknown>)[key] = value;
-  }
-}
-if (current?.id) profiles.push(current as Profile);
+const KNOWN_KINDS = new Set([
+  "Dmm",
+  "DcPowerSupply",
+  "FunctionGenerator",
+  "Oscilloscope",
+  "Switch",
+  "Counter",
+  "PowerMeter",
+  "SpectrumAnalyzer",
+]);
 
 function unescapeTomlString(value: string): string {
   if (!(value.startsWith('"') && value.endsWith('"'))) {
@@ -60,6 +32,125 @@ function unescapeTomlString(value: string): string {
   }
   return value.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, "\\");
 }
+
+function parseTomlProfiles(text: string): Profile[] {
+  const profiles: Profile[] = [];
+  let current: Partial<Profile> | null = null;
+  let inCommands = false;
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    if (line === "[[profile]]") {
+      if (current?.id) profiles.push(current as Profile);
+      current = { commands: {}, channels: 1 };
+      inCommands = false;
+      continue;
+    }
+    if (line === "[profile.commands]") {
+      inCommands = true;
+      continue;
+    }
+    if (line.startsWith("[")) {
+      inCommands = false;
+      continue;
+    }
+    const eq = line.indexOf("=");
+    if (eq < 0 || !current) continue;
+    const key = line.slice(0, eq).trim();
+    const value = unescapeTomlString(line.slice(eq + 1).trim());
+    if (inCommands) {
+      current.commands![key] = value;
+    } else if (key === "channels") {
+      current.channels = Number(value);
+    } else {
+      (current as Record<string, unknown>)[key] = value;
+    }
+  }
+  if (current?.id) profiles.push(current as Profile);
+  return profiles;
+}
+
+function requireNonEmptyString(value: unknown, label: string): string {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+  return value;
+}
+
+function loadVendorJsonProfiles(): Profile[] {
+  const dir = new URL("spec/vendors/", root);
+  const names: string[] = [];
+  try {
+    for (const entry of Deno.readDirSync(dir)) {
+      if (entry.isFile && entry.name.endsWith(".json")) {
+        names.push(entry.name);
+      }
+    }
+  } catch (err) {
+    if (err instanceof Deno.errors.NotFound) return [];
+    throw err;
+  }
+  names.sort();
+  return names.map((name) => {
+    const path = new URL(name, dir);
+    const raw = JSON.parse(Deno.readTextFileSync(path)) as Record<string, unknown>;
+    const id = requireNonEmptyString(raw.id, `${name}: id`);
+    const kind = requireNonEmptyString(raw.kind, `${name}: kind`);
+    if (!KNOWN_KINDS.has(kind)) {
+      throw new Error(`${name}: unknown kind ${JSON.stringify(kind)}`);
+    }
+    const commandsRaw = raw.commands;
+    if (commandsRaw == null || typeof commandsRaw !== "object" || Array.isArray(commandsRaw)) {
+      throw new Error(`${name}: commands must be an object`);
+    }
+    const commands: Record<string, string> = {};
+    for (const [key, value] of Object.entries(commandsRaw as Record<string, unknown>)) {
+      commands[key] = requireNonEmptyString(value, `${name}: commands.${key}`);
+    }
+    if (Object.keys(commands).length === 0) {
+      throw new Error(`${name}: commands must not be empty`);
+    }
+    let channels = 1;
+    if (raw.channels != null) {
+      if (typeof raw.channels !== "number" || !Number.isInteger(raw.channels) || raw.channels < 1) {
+        throw new Error(`${name}: channels must be a positive integer`);
+      }
+      channels = raw.channels;
+    }
+    return {
+      id,
+      kind,
+      manufacturer_glob: requireNonEmptyString(raw.manufacturerGlob, `${name}: manufacturerGlob`),
+      model_glob: requireNonEmptyString(raw.modelGlob, `${name}: modelGlob`),
+      channels,
+      commands,
+    };
+  });
+}
+
+function mergeProfiles(toml: Profile[], json: Profile[]): Profile[] {
+  const seen = new Set<string>();
+  const out: Profile[] = [];
+  const add = (list: Profile[]) => {
+    for (const profile of list) {
+      if (seen.has(profile.id)) {
+        throw new Error(`duplicate dialect id: ${profile.id}`);
+      }
+      seen.add(profile.id);
+      out.push(profile);
+    }
+  };
+  add(toml.filter((p) => !p.id.startsWith("generic_")));
+  add(json);
+  add(toml.filter((p) => p.id.startsWith("generic_")));
+  return out;
+}
+
+const tomlProfiles = parseTomlProfiles(
+  await Deno.readTextFile(new URL("crates/instrument-core/data/dialects/profiles.toml", root)),
+);
+const profiles = mergeProfiles(tomlProfiles, loadVendorJsonProfiles());
 
 const scpiToml = await Deno.readTextFile(
   new URL("crates/instrument-core/data/scpi_commands.toml", root),

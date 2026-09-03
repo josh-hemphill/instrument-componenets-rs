@@ -57,6 +57,110 @@ public static class DialectRegistry
         },
         new DialectProfile
         {
+            Id = "keysight_sensor",
+            Kind = InstrumentKind.PowerMeter,
+            ManufacturerGlob = "Keysight*",
+            ModelGlob = "*U20*",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["unit"] = ":UNIT:POW {unit}",
+            ["auto_range"] = ":SENS:POW:RANG:AUTO {state}",
+            ["auto_average"] = ":SENS:AVER:COUN:AUTO {state}",
+            ["correction_frequency"] = ":SENS:FREQ {hz}",
+            ["offset"] = ":SENS:CORR:GAIN2 {db}",
+            ["initiate"] = "INIT",
+            ["fetch"] = "FETC?",
+            ["read"] = "READ?",
+            ["configure"] = ":CONF"
+            },
+        },
+        new DialectProfile
+        {
+            Id = "keysight_xseries",
+            Kind = InstrumentKind.SpectrumAnalyzer,
+            ManufacturerGlob = "Keysight*",
+            ModelGlob = "N90*",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["center_frequency"] = ":FREQ:CENT {hz}",
+            ["span"] = ":FREQ:SPAN {hz}",
+            ["rbw"] = ":BAND {hz}",
+            ["vbw"] = ":BAND:VID {hz}",
+            ["ref_level"] = ":DISP:WIND:TRAC:Y:RLEV {dbm}",
+            ["trace_data"] = ":TRAC:DATA? TRACE1",
+            ["marker_peak"] = ":CALC:MARK:MAX",
+            ["marker_x"] = ":CALC:MARK:X?",
+            ["marker_y"] = ":CALC:MARK:Y?",
+            ["sweep_continuous"] = ":INIT:CONT {state}",
+            ["single_sweep"] = ":INIT:IMM",
+            ["wait_opc"] = "*OPC?"
+            },
+        },
+        new DialectProfile
+        {
+            Id = "rigol_dsa",
+            Kind = InstrumentKind.SpectrumAnalyzer,
+            ManufacturerGlob = "Rigol*",
+            ModelGlob = "DSA*",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["center_frequency"] = ":FREQ:CENT {hz}",
+            ["span"] = ":FREQ:SPAN {hz}",
+            ["rbw"] = ":BAND {hz}",
+            ["vbw"] = ":BAND:VID {hz}",
+            ["ref_level"] = ":DISP:WIND:TRAC:Y:RLEV {dbm}",
+            ["trace_data"] = ":TRAC? TRACE1",
+            ["marker_peak"] = ":CALC:MARK:MAX",
+            ["marker_x"] = ":CALC:MARK:X?",
+            ["marker_y"] = ":CALC:MARK:Y?",
+            ["sweep_continuous"] = ":INIT:CONT {state}",
+            ["single_sweep"] = ":INIT",
+            ["wait_opc"] = "*OPC?"
+            },
+        },
+        new DialectProfile
+        {
+            Id = "keithley_dmm6500",
+            Kind = InstrumentKind.Dmm,
+            ManufacturerGlob = "Keithley*",
+            ModelGlob = "DMM6500",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["measure_voltage_dc"] = ":SENS:FUNC \"VOLT:DC\";:READ?",
+            ["measure_voltage_ac"] = ":SENS:FUNC \"VOLT:AC\";:READ?",
+            ["measure_current_dc"] = ":SENS:FUNC \"CURR:DC\";:READ?",
+            ["measure_current_ac"] = ":SENS:FUNC \"CURR:AC\";:READ?",
+            ["measure_resistance_2w"] = ":SENS:FUNC \"RES\";:READ?",
+            ["measure_resistance_4w"] = ":SENS:FUNC \"FRES\";:READ?",
+            ["measure_temperature"] = ":SENS:FUNC \"TEMP\";:READ?"
+            },
+        },
+        new DialectProfile
+        {
+            Id = "keysight_n6705c",
+            Kind = InstrumentKind.DcPowerSupply,
+            ManufacturerGlob = "Keysight*",
+            ModelGlob = "N6705*",
+            Channels = 4,
+            Commands = new Dictionary<string, string>
+            {
+            ["set_voltage"] = ":VOLT {volts}, (@{channel})",
+            ["set_current_limit"] = ":CURR {amps}, (@{channel})",
+            ["output_enable"] = ":OUTP {state}, (@{channel})",
+            ["output_state_query"] = ":OUTP? (@{channel})",
+            ["read_voltage"] = ":MEAS:VOLT? (@{channel})",
+            ["read_current"] = ":MEAS:CURR? (@{channel})",
+            ["ovp_level"] = ":VOLT:PROT {volts}, (@{channel})",
+            ["ovp_enable"] = ":VOLT:PROT:STAT {state}, (@{channel})",
+            ["ovp_query"] = ":VOLT:PROT:STAT? (@{channel})"
+            },
+        },
+        new DialectProfile
+        {
             Id = "generic_dmm",
             Kind = InstrumentKind.Dmm,
             ManufacturerGlob = "*",
@@ -181,26 +285,6 @@ public static class DialectRegistry
         },
         new DialectProfile
         {
-            Id = "keysight_sensor",
-            Kind = InstrumentKind.PowerMeter,
-            ManufacturerGlob = "Keysight*",
-            ModelGlob = "*U20*",
-            Channels = 1,
-            Commands = new Dictionary<string, string>
-            {
-            ["unit"] = ":UNIT:POW {unit}",
-            ["auto_range"] = ":SENS:POW:RANG:AUTO {state}",
-            ["auto_average"] = ":SENS:AVER:COUN:AUTO {state}",
-            ["correction_frequency"] = ":SENS:FREQ {hz}",
-            ["offset"] = ":SENS:CORR:GAIN2 {db}",
-            ["initiate"] = "INIT",
-            ["fetch"] = "FETC?",
-            ["read"] = "READ?",
-            ["configure"] = ":CONF"
-            },
-        },
-        new DialectProfile
-        {
             Id = "generic_pwrmeter",
             Kind = InstrumentKind.PowerMeter,
             ManufacturerGlob = "*",
@@ -217,52 +301,6 @@ public static class DialectRegistry
             ["fetch"] = "FETC?",
             ["read"] = "READ?",
             ["configure"] = ":CONF"
-            },
-        },
-        new DialectProfile
-        {
-            Id = "keysight_xseries",
-            Kind = InstrumentKind.SpectrumAnalyzer,
-            ManufacturerGlob = "Keysight*",
-            ModelGlob = "N90*",
-            Channels = 1,
-            Commands = new Dictionary<string, string>
-            {
-            ["center_frequency"] = ":FREQ:CENT {hz}",
-            ["span"] = ":FREQ:SPAN {hz}",
-            ["rbw"] = ":BAND {hz}",
-            ["vbw"] = ":BAND:VID {hz}",
-            ["ref_level"] = ":DISP:WIND:TRAC:Y:RLEV {dbm}",
-            ["trace_data"] = ":TRAC:DATA? TRACE1",
-            ["marker_peak"] = ":CALC:MARK:MAX",
-            ["marker_x"] = ":CALC:MARK:X?",
-            ["marker_y"] = ":CALC:MARK:Y?",
-            ["sweep_continuous"] = ":INIT:CONT {state}",
-            ["single_sweep"] = ":INIT:IMM",
-            ["wait_opc"] = "*OPC?"
-            },
-        },
-        new DialectProfile
-        {
-            Id = "rigol_dsa",
-            Kind = InstrumentKind.SpectrumAnalyzer,
-            ManufacturerGlob = "Rigol*",
-            ModelGlob = "DSA*",
-            Channels = 1,
-            Commands = new Dictionary<string, string>
-            {
-            ["center_frequency"] = ":FREQ:CENT {hz}",
-            ["span"] = ":FREQ:SPAN {hz}",
-            ["rbw"] = ":BAND {hz}",
-            ["vbw"] = ":BAND:VID {hz}",
-            ["ref_level"] = ":DISP:WIND:TRAC:Y:RLEV {dbm}",
-            ["trace_data"] = ":TRAC? TRACE1",
-            ["marker_peak"] = ":CALC:MARK:MAX",
-            ["marker_x"] = ":CALC:MARK:X?",
-            ["marker_y"] = ":CALC:MARK:Y?",
-            ["sweep_continuous"] = ":INIT:CONT {state}",
-            ["single_sweep"] = ":INIT",
-            ["wait_opc"] = "*OPC?"
             },
         },
         new DialectProfile

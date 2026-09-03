@@ -1,0 +1,19 @@
+{
+  "$schema": "../vendors.schema.json",
+  "id": "keysight_n6705c",
+  "kind": "DcPowerSupply",
+  "manufacturerGlob": "Keysight*",
+  "modelGlob": "N6705*",
+  "channels": 4,
+  "commands": {
+    "set_voltage": ":VOLT {volts}, (@{channel})",
+    "set_current_limit": ":CURR {amps}, (@{channel})",
+    "output_enable": ":OUTP {state}, (@{channel})",
+    "output_state_query": ":OUTP? (@{channel})",
+    "read_voltage": ":MEAS:VOLT? (@{channel})",
+    "read_current": ":MEAS:CURR? (@{channel})",
+    "ovp_level": ":VOLT:PROT {volts}, (@{channel})",
+    "ovp_enable": ":VOLT:PROT:STAT {state}, (@{channel})",
+    "ovp_query": ":VOLT:PROT:STAT? (@{channel})"
+  }
+}
