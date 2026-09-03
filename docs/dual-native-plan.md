@@ -8,8 +8,7 @@ when a decision changes.
 
 ## Current state (after A–E)
 
-Merged into `latest` as PRs #5–#8. Stream E is implemented on PR #10 (session
-I/O honesty). Stream F stacks on E until E merges.
+Merged into `latest` as PRs #5–#8 and #10. Stream F is this branch.
 
 | Stream | PR | What landed |
 |--------|----|-------------|
@@ -69,16 +68,14 @@ VISA. Do not confuse the two.
 ## Roadmap (remaining)
 
 ```text
-latest
-  └─ E  session I/O honesty     (PR #10)
-       └─ F  dialect for remaining classes
-            DMM, PSU, FGen, oscilloscope, switch, counter
-            └─ G  DMM + PSU transcripts + 1–2 vendor profiles
-                 └─ H  self-hosted hardware smoke (not GitHub-hosted)
+latest  (includes E as #10)
+  └─ F  dialect for remaining classes
+        DMM, PSU, FGen, oscilloscope, switch, counter
+        └─ G  DMM + PSU transcripts + 1–2 vendor profiles
+             └─ H  self-hosted hardware smoke (not GitHub-hosted)
 ```
 
-F may stack on E while E is open. Do not start G until F is merged. H is
-self-hosted and does not block F/G.
+Do not start G until F is merged. H is self-hosted and does not block F/G.
 
 ---
 
