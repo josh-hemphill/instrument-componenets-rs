@@ -9,8 +9,12 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | Multi-session same device | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests.MultiSessionSameDevice` | |
 | Static discovery classify | `crates/instrument/tests/discovery_static.rs` | `DiscoveryStaticTests` | |
 | Async static discovery | `crates/instrument/tests/async_discovery_static.rs` | `AsyncDiscoveryStaticTests` | |
-| SCPI query retry after timeout | `crates/instrument-core/tests/reliability.rs` | `ReliabilityTests` | |
-| Async SCPI query retry | `crates/instrument-core/tests/async_reliability.rs` | `AsyncReliabilityTests` | |
+| SCPI query retry after timeout | `crates/instrument-core/tests/reliability.rs` | `ReliabilityTests` | Write retry (`fail_writes`) |
+| SCPI query read retry + flush | same | same | `fail_reads` drains stale, retry returns fresh |
+| Async SCPI query retry | `crates/instrument-core/tests/async_reliability.rs` | `AsyncReliabilityTests` | Write + read retry |
+| Honest `*OPC?` / `SYST:ERR?` probes | `reliability.rs` | `ReliabilityTests` | `-113` / `OK` are not supported |
+| Zero-byte read fail-closed | same | same | No 1 ms spin loop |
+| Async query drop restores I/O timeout | `async_reliability.rs` | C# `CancelledFlushStillRestoresIoTimeout` | Rust Drop guard; C# `finally` |
 | Diagnostics observer + health | `crates/instrument-core/tests/diagnostics.rs` | `DiagnosticsTests` | |
 | Async diagnostics | `crates/instrument-core/tests/async_diagnostics.rs` | `AsyncDiagnosticsTests` | |
 | Transcript `smu2602` | `crates/instrument/tests/transcript_behavior.rs` | `TranscriptBehaviorTests` | `fixtures/smu2602.json` — asserts 3.3 V |

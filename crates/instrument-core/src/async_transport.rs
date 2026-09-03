@@ -35,6 +35,11 @@ pub trait AsyncTransport: Send {
         Box::pin(async { Ok(()) })
     }
 
+    /// Synchronously applies a read timeout so cancel/drop can restore I/O timeout.
+    fn apply_read_timeout(&mut self, _timeout: Duration) -> Result<()> {
+        Ok(())
+    }
+
     /// Reopens a dropped connection (e.g. TCPIP). Default: unsupported.
     fn reconnect<'a>(&'a mut self) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {
         Box::pin(async { Err(Error::Unsupported("reconnect")) })
@@ -94,6 +99,10 @@ impl<T: crate::transport::Transport + Send> AsyncTransport for SyncAsAsyncTransp
         timeout: Duration,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {
         Box::pin(async move { self.inner.set_read_timeout(timeout) })
+    }
+
+    fn apply_read_timeout(&mut self, timeout: Duration) -> Result<()> {
+        self.inner.set_read_timeout(timeout)
     }
 
     fn reconnect<'a>(&'a mut self) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {

@@ -25,6 +25,136 @@ public class ReliabilityTests
     }
 
     [Fact]
+    public void QueryRetriesReadTimeoutFlushesStaleThenSucceeds()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+            new ReadStep { Data = "1.0\n" },
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+            new ReadStep { Data = "3.3\n" },
+        ]).FailReads(1);
+
+        var opts = new ConnectOptions { Retries = 1, RetryBackoff = TimeSpan.FromMilliseconds(1), ReconnectOnFailure = false };
+        var session = new ScpiSession(transport, opts);
+        var volts = session.Query(":MEAS:VOLT:DC?");
+        Assert.Equal("3.3", volts.Trim());
+    }
+
+    [Fact]
+    public void QueryReadRetriesExhaustedIsTimeout()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+            new WriteStep { Data = ":MEAS:VOLT:DC?\n" },
+        ]).FailReads(4);
+
+        var opts = new ConnectOptions { Retries = 1, RetryBackoff = TimeSpan.FromMilliseconds(1), ReconnectOnFailure = false };
+        var session = new ScpiSession(transport, opts);
+        Assert.Throws<InstrumentTimeoutException>(() => session.Query(":MEAS:VOLT:DC?"));
+    }
+
+    [Fact]
+    public void ProbeOpcUndefinedHeaderIsUnsupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "*OPC?\n" },
+            new ReadStep { Data = "-113,\"Undefined header\"\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.False(session.ProbeOpc());
+        new global::InstrumentComponents.Ieee4882.Ieee4882(session).WaitComplete();
+    }
+
+    [Fact]
+    public void ProbeOpcOneIsSupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "*OPC?\n" },
+            new ReadStep { Data = "1\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.True(session.ProbeOpc());
+    }
+
+    [Fact]
+    public void ProbeSystErrOkIsUnsupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "SYST:ERR?\n" },
+            new ReadStep { Data = "OK\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.False(session.ProbeSystErr());
+    }
+
+    [Fact]
+    public void ProbeSystErrNoErrorIsSupported()
+    {
+        var transport = new MockTransport([
+            new WriteStep { Data = "SYST:ERR?\n" },
+            new ReadStep { Data = "0,\"No error\"\n" },
+        ]);
+        var session = new ScpiSession(transport, new ConnectOptions { Retries = 0, ReconnectOnFailure = false });
+        Assert.True(session.ProbeSystErr());
+    }
+
+    [Fact]
+    public void ZeroByteReadIsTimeoutWithoutSpin()
+    {
+        var session = new ScpiSession(new ZeroByteTransport(), new ConnectOptions
+        {
+            Retries = 0,
+            ReconnectOnFailure = false,
+            ReadTimeout = TimeSpan.FromSeconds(10),
+        });
+        var started = DateTime.UtcNow;
+        Assert.Throws<InstrumentTimeoutException>(() => session.Query("*IDN?"));
+        Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(2), "zero-byte read spun instead of failing closed");
+    }
+
+    [Fact]
+    public void OpcAndSystErrReplyParsers()
+    {
+        Assert.True(ScpiProtocol.IsOpcSupportedReply("1"));
+        Assert.True(ScpiProtocol.IsOpcSupportedReply("+1"));
+        Assert.False(ScpiProtocol.IsOpcSupportedReply("-113,\"Undefined header\""));
+        Assert.True(ScpiProtocol.IsSystErrSupportedReply("0,\"No error\""));
+        Assert.False(ScpiProtocol.IsSystErrSupportedReply("OK"));
+    }
+
+    [Fact]
+    public void ZeroByteReadDoesNotReconnect()
+    {
+        var transport = new ReconnectProbeTransport { ZeroByte = true };
+        var session = new ScpiSession(transport, new ConnectOptions
+        {
+            Retries = 0,
+            ReconnectOnFailure = true,
+        });
+        Assert.Throws<InstrumentTimeoutException>(() => session.Query("*IDN?"));
+        Assert.Equal(0, transport.Reconnects);
+    }
+
+    [Fact]
+    public void QueryReadTimeoutReconnectsOnceThenSucceeds()
+    {
+        var transport = new ReconnectProbeTransport
+        {
+            RemainingTimeouts = 2,
+            Payload = "3.3\n"u8.ToArray(),
+        };
+        var session = new ScpiSession(transport, new ConnectOptions
+        {
+            Retries = 1,
+            RetryBackoff = TimeSpan.FromMilliseconds(1),
+            ReconnectOnFailure = true,
+        });
+        var volts = session.Query(":MEAS:VOLT:DC?");
+        Assert.Equal("3.3", volts.Trim());
+        Assert.Equal(1, transport.Reconnects);
+    }
+
+    [Fact]
     public void ProbeSystErrIsFalseWhenQueryFails()
     {
         var transport = new MockTransport([
@@ -111,6 +241,46 @@ public class ReliabilityTests
         var transport = new OpcThenFailRestoreTransport();
         var session = new ScpiSession(transport, new ConnectOptions { ReconnectOnFailure = false });
         Assert.True(session.ProbeOpc());
+    }
+
+    private sealed class ReconnectProbeTransport : TransportBase
+    {
+        public int Reconnects { get; private set; }
+        public uint RemainingTimeouts { get; set; }
+        public bool ZeroByte { get; set; }
+        public byte[]? Payload { get; set; }
+
+        public override void Write(ReadOnlySpan<byte> data) { }
+
+        public override int Read(Span<byte> buffer)
+        {
+            if (ZeroByte)
+                return 0;
+            if (RemainingTimeouts > 0)
+            {
+                RemainingTimeouts--;
+                throw new InstrumentTimeoutException();
+            }
+            if (Payload is { } data)
+            {
+                Payload = null;
+                data.CopyTo(buffer);
+                return data.Length;
+            }
+            throw new TransportClosedException();
+        }
+
+        public override void Clear() { }
+        public override void SetReadTimeout(TimeSpan timeout) { }
+        public override void Reconnect() => Reconnects++;
+    }
+
+    private sealed class ZeroByteTransport : TransportBase
+    {
+        public override void Write(ReadOnlySpan<byte> data) { }
+        public override int Read(Span<byte> buffer) => 0;
+        public override void Clear() { }
+        public override void SetReadTimeout(TimeSpan timeout) { }
     }
 
     private sealed class ThrowOnTimeoutRestoreTransport : TransportBase

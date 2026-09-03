@@ -25,6 +25,7 @@ pub struct MockTransport {
     step_index: Arc<Mutex<usize>>,
     identity: TransportIdentity,
     fail_writes_remaining: Arc<Mutex<u32>>,
+    fail_reads_remaining: Arc<Mutex<u32>>,
 }
 
 impl MockTransport {
@@ -35,6 +36,7 @@ impl MockTransport {
             step_index: Arc::new(Mutex::new(0)),
             identity: TransportIdentity::default(),
             fail_writes_remaining: Arc::new(Mutex::new(0)),
+            fail_reads_remaining: Arc::new(Mutex::new(0)),
         }
     }
 
@@ -43,6 +45,7 @@ impl MockTransport {
         let mut t = Self::from_script(self.script.clone());
         t.identity = self.identity.clone();
         *t.fail_writes_remaining.lock().unwrap() = *self.fail_writes_remaining.lock().unwrap();
+        *t.fail_reads_remaining.lock().unwrap() = *self.fail_reads_remaining.lock().unwrap();
         t
     }
 
@@ -59,6 +62,21 @@ impl MockTransport {
     pub fn fail_writes(self, count: u32) -> Self {
         *self.fail_writes_remaining.lock().unwrap() = count;
         self
+    }
+
+    /// Fails the next N read attempts with Timeout without consuming a script step.
+    pub fn fail_reads(self, count: u32) -> Self {
+        *self.fail_reads_remaining.lock().unwrap() = count;
+        self
+    }
+
+    fn peek_step(&self) -> Result<ScriptStep> {
+        let idx = self.step_index.lock().unwrap();
+        let steps = self.steps.lock().unwrap();
+        if *idx >= steps.len() {
+            return Err(Error::MockExhausted);
+        }
+        Ok(steps[*idx].clone())
     }
 
     fn next_step(&self) -> Result<ScriptStep> {
@@ -98,6 +116,18 @@ impl Transport for MockTransport {
     }
 
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        let mut fails = self.fail_reads_remaining.lock().unwrap();
+        if *fails > 0 {
+            *fails -= 1;
+            return Err(Error::Timeout);
+        }
+        drop(fails);
+
+        match self.peek_step()? {
+            ScriptStep::Read { .. } => {}
+            _ => return Err(Error::Timeout),
+        }
+
         match self.next_step()? {
             ScriptStep::Read { data } => {
                 let bytes = data.as_bytes();
@@ -158,6 +188,10 @@ impl crate::async_transport::AsyncTransport for MockTransport {
         timeout: Duration,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'a>> {
         Box::pin(async move { Transport::set_read_timeout(self, timeout) })
+    }
+
+    fn apply_read_timeout(&mut self, timeout: Duration) -> Result<()> {
+        Transport::set_read_timeout(self, timeout)
     }
 
     fn identity(&self) -> TransportIdentity {
