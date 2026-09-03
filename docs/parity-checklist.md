@@ -21,6 +21,8 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | Transcript scope | same | same | `fixtures/scope_ds1054z.json` — asserts samples + interval |
 | Transcript switch | same | same | `fixtures/switch_34970a.json` — asserts closed |
 | Transcript counter | same | same | `fixtures/counter_53230a.json` — asserts 1000 Hz |
+| Transcript DMM6500 | same | same | `fixtures/dmm_dmm6500.json` — dialect `:SENS:FUNC`; ranged measure falls back |
+| Transcript N6705C | same | same | `fixtures/psu_n6705c.json` — channel-list SCPI; `channel_count` is 4 |
 | Shared SCPI vectors | `crates/instrument-core/tests/shared_contracts.rs` | `SharedContractTests` | `spec/scpi-vectors.json` |
 | Shared classifier cases | same | same | `spec/classifier-cases.json` |
 | New kinds (scope/switch/counter) | `crates/instrument/tests/new_instrument_kinds.rs` | `NewInstrumentKindTests` | |

@@ -3,12 +3,12 @@
 Rust and C# are **first-class native implementations**, not a port. They share
 JSON contracts, SCPI fixtures, and CI gates. They do **not** share a runtime.
 
-This is the working plan for remaining work after Streams A–D. Update this file
+This is the working plan for remaining work after Streams A–F. Update this file
 when a decision changes.
 
-## Current state (after A–E)
+## Current state (after A–F)
 
-Merged into `latest` as PRs #5–#8 and #10. Stream F is this branch.
+Merged into `latest` as PRs #5–#8, #10, and #11. Stream G is this branch.
 
 | Stream | PR | What landed |
 |--------|----|-------------|
@@ -17,13 +17,15 @@ Merged into `latest` as PRs #5–#8 and #10. Stream F is this branch.
 | C | #7 | `spec/` JSON contracts, dialect-resolved SCPI for PowerMeter + SpectrumAnalyzer only, vendor profiles before `generic_*` |
 | D | #8 | C# examples, multi-session test, dual-native docs, Counter timeout + scope binary waveform **deferred** |
 | E | #10 | Query retry+flush, honest OPC/ERR probes, Ok(0) fail-closed, framed reads do not reconnect before flush, Rust async Drop restore |
+| F | #11 | Dialect emission for DMM/PSU/FGen/scope/switch/counter with fallback; leftover-placeholder + extra-optional-var hardening; CI `TestDialect*` fixtures |
 
 Dialect emission: PowerMeter and SpectrumAnalyzer **require** dialect keys.
 DMM, PSU, function generator, oscilloscope, switch, and counter use
 `dialect_io::try_command` / `try_formatted` and C# `DialectCommand.Try`
 (dialect first, `scpi_commands` / `ScpiCommands` fallback). Command ids live
-in `crates/instrument-core/data/dialects/profiles.toml` and
-`scpi_commands.toml` (not `spec/commands.json`).
+in `crates/instrument-core/data/dialects/profiles.toml`,
+`spec/vendors/*.json`, and fallback templates in `scpi_commands.toml` (not
+`spec/commands.json`).
 
 No hardware evidence. `crates/instrument/tests/hardware.rs` is `#[ignore]`.
 GitHub-hosted CI uses MockTransport + transcripts. That is the correct CI
@@ -37,8 +39,9 @@ shape (see [Hardware emulators](#hardware-emulators-ni--keysight)).
 - Do not expand the instrument registry. Adding classes, growing UniFFI, or
   IVI adapters is out of scope until remaining classes use dialect emission and
   we have hardware evidence for at least one class.
-- Generated files are not source of truth. Edit `spec/` (and the generator);
-  regenerate; do not hand-edit `generated.rs` / `Generated.cs`.
+- Generated files are not source of truth. Edit `spec/`, `spec/vendors/`,
+  and dialect TOML (and the generator); regenerate; do not hand-edit
+  `generated.rs` / `Generated.cs`.
 - Do not publish `0.2.0` before hardware evidence.
 - Do not add vendor VISA (NI-VISA, Keysight IO Libraries) to GitHub-hosted CI.
 
@@ -68,14 +71,12 @@ VISA. Do not confuse the two.
 ## Roadmap (remaining)
 
 ```text
-latest  (includes E as #10)
-  └─ F  dialect for remaining classes
-        DMM, PSU, FGen, oscilloscope, switch, counter
-        └─ G  DMM + PSU transcripts + 1–2 vendor profiles
-             └─ H  self-hosted hardware smoke (not GitHub-hosted)
+latest  (includes F as #11)
+  └─ G  DMM + PSU transcripts + 1–2 vendor profiles
+        └─ H  self-hosted hardware smoke (not GitHub-hosted)
 ```
 
-Do not start G until F is merged. H is self-hosted and does not block F/G.
+F is merged. H is self-hosted and does not block G.
 
 ---
 
@@ -265,20 +266,31 @@ and extra optional configure args do not drop `{range}`.
 ## Stream G — DMM + PSU transcripts and vendor profiles
 
 **Goal:** Golden SCPI transcripts for DMM and PSU, plus 1–2 real vendor dialect
-profiles so dialect resolution is not only `generic_*`.
+profiles so dialect resolution is not only `generic_*` / `TestDialect*`.
 
 **Fixtures today:** `fixtures/` has `smu2602`, `scope_ds1054z`, `switch_34970a`,
-`counter_53230a` only. No DMM, no PSU.
+`counter_53230a`, `dmm_dmm6500`, `psu_n6705c`.
 
 **Approach:**
 
-1. Add `fixtures/dmm_*.json` and `fixtures/psu_*.json` (or named vendor files)
-   in the same transcript schema as existing fixtures.
-2. Add 1–2 vendor profiles under `spec/vendors/` for a DMM and a PSU that we
-   can later put on a bench (prefer instruments already in `hardware.rs`
-   comments / README if any).
-3. Wire profiles so they sort before `generic_*` (already true after C).
-4. Both Rust and C# transcript tests consume the same JSON.
+1. Add `fixtures/dmm_dmm6500.json` and `fixtures/psu_n6705c.json` in the same
+   transcript schema as existing fixtures. Both languages assert **values**.
+2. Add vendor profiles under `spec/vendors/` for instruments already in
+   `model_registry.toml` (do not expand the registry):
+   - Keithley DMM6500 (`keithley_dmm6500`): `:SENS:FUNC "VOLT:DC";:READ?`
+     for un-ranged measure. Configure/initiate/fetch/read stay on generic
+     fallback. A ranged measure is a constant template plus `{range}`, so it
+     falls back to `:MEAS:VOLT:DC? 10`.
+   - Keysight N6705C (`keysight_n6705c`, 4 channels): channel-list SCPI
+     (`:VOLT {volts}, (@{channel})`). Omit `sense_enable` (N6705 uses INT/EXT,
+     not ON/OFF).
+3. `tools/gen-dialects.ts` loads `spec/vendors/*.json` and inserts those
+   profiles after non-generic TOML rows (CI `TestDialect*` fixtures stay
+   first) and before `generic_*`. Do not duplicate G vendors in
+   `profiles.toml`. Existing PM/SA vendors stay in TOML.
+4. Do not attach vendors to `34461A` or `E36312A` — those stay generic in
+   mock catalog and `spec/scpi-vectors.json`.
+5. Both Rust and C# transcript tests consume the same JSON (sync only).
 
 **Does not:** Hardware smoke (H). More classes’ transcripts (can follow after G
 if needed). Registry expansion.

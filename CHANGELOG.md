@@ -34,8 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Shared dual-native contracts under `spec/` (`scpi-vectors.json`, `classifier-cases.json`) loaded by Rust and C# tests
+- Shared dual-native contracts under `spec/` (`scpi-vectors.json`, `classifier-cases.json`, `vendors/*.json`) loaded by Rust and C# tests
 - Transcript fixtures now drive typed-class actions and assert measured values
+- Golden DMM/PSU transcripts (`fixtures/dmm_dmm6500.json`, `fixtures/psu_n6705c.json`) plus Keithley DMM6500 and Keysight N6705C vendor dialects
 - C# examples: `DmmMeasure`, `ManualTcpip`, `DiscoverAsync`
 - Dual-native reliability plan (`docs/dual-native-plan.md`)
 - Release workflow requires the .NET CI workflow before crates.io or NuGet publish
@@ -61,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dialect fallback ignores extra optional vars when required placeholders are filled; leftover `{ident}` on no-arg `try_command` falls back like C#
 - Spectrum analyzer and power meter classes emit SCPI from the resolved dialect profile (Rigol DSA `:TRAC?` vs generic `:TRAC:DATA?`)
 - Vendor dialect profiles are matched before catch-all `generic_*` rows; glob patterns like `*U20*` match a substring
+- `tools/gen-dialects.ts` loads `spec/vendors/*.json` hardware dialects after CI TOML fixtures and before `generic_*`
 - C# `InstrumentComponents.Visa` targets `net8.0` (Linux-capable builds via `IviFoundation.Visa`; runtime still needs a vendor VISA install)
 
 ## [0.1.0] - 2026-06-06

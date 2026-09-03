@@ -1,6 +1,6 @@
 # Roadmap
 
-Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A–E are merged (`latest`). Stream F (this work) emits dialect-resolved SCPI for the remaining catalog classes. Next: DMM/PSU transcripts and self-hosted hardware smoke.
+Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A–F are merged (`latest`). Stream G (this work) adds DMM/PSU golden transcripts and real vendor dialect profiles. Next: self-hosted hardware smoke.
 
 **Still deferred:** package publishing (`0.2.0`), UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance, vendor VISA on GitHub-hosted CI.
 
@@ -19,4 +19,4 @@ flowchart LR
   A --> B --> C --> D --> E --> F --> G --> H
 ```
 
-Dialect profiles live under `crates/instrument-core/data/dialects/` and are generated via `tools/gen-dialects.ts`.
+Dialect profiles live under `crates/instrument-core/data/dialects/` and `spec/vendors/`, generated via `tools/gen-dialects.ts`.

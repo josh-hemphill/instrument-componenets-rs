@@ -8,12 +8,15 @@ These files are the executable contract between the Rust and C# implementations.
 | `classifier-cases.json` | Address / `*IDN?` / merge / override → kinds |
 | `generic-scpi-map.json` | Maps `generic_*` dialect keys to `scpi_commands.toml` (codegen check) |
 | `transcript.schema.json` | Schema for `fixtures/*.json` I/O transcripts |
+| `vendors.schema.json` | Schema for `vendors/*.json` hardware dialect profiles |
+| `vendors/*.json` | Real vendor SCPI dialects (merged before `generic_*` by `gen-dialects.ts`) |
 
 ## Rules
 
-1. Edit TOML under `crates/instrument-core/data/`, then regenerate. Never hand-edit generated files.
+1. Edit TOML under `crates/instrument-core/data/` or JSON under `spec/vendors/`, then regenerate. Never hand-edit generated files.
 2. New typed-class methods that emit SCPI need a row in `scpi-vectors.json` (or a shared transcript that asserts the value).
 3. Transcripts under `fixtures/` must drive a typed-class action and assert **values**, not only step counts.
+4. Do not attach new vendor globs to models used as generic in mock catalog (`34461A`, `E36312A`).
 
 ```bash
 deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-shared-tables.ts
