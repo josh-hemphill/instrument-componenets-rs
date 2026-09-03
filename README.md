@@ -183,8 +183,11 @@ cargo test --workspace --no-default-features
 cargo test -p instrument-core --features async
 cargo test -p instrument-components --features tokio --no-default-features
 
-# Hardware (local, requires VISA + instruments)
+# Hardware (local or self-hosted, requires VISA + a DMM)
 cargo test -p instrument-components --features visa -- --ignored
+# One-resource DMM smoke (used by .github/workflows/hardware.yml)
+INSTRUMENT_RESOURCE='USB0::0x0957::0x0607::SN::INSTR' \
+  cargo test -p instrument-components --features visa --test hardware dmm_measure_voltage_dc_smoke -- --ignored --nocapture --exact
 ```
 
 ## License

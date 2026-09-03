@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared dual-native contracts under `spec/` (`scpi-vectors.json`, `classifier-cases.json`, `vendors/*.json`) loaded by Rust and C# tests
 - Transcript fixtures now drive typed-class actions and assert measured values
 - Golden DMM/PSU transcripts (`fixtures/dmm_dmm6500.json`, `fixtures/psu_n6705c.json`) plus Keithley DMM6500 and Keysight N6705C vendor dialects
+- Self-hosted `Hardware smoke` workflow (`workflow_dispatch`) that measures DC voltage on one DMM via `INSTRUMENT_RESOURCE`
 - C# examples: `DmmMeasure`, `ManualTcpip`, `DiscoverAsync`
 - Dual-native reliability plan (`docs/dual-native-plan.md`)
 - Release workflow requires the .NET CI workflow before crates.io or NuGet publish

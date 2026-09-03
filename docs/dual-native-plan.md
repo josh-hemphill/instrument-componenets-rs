@@ -3,12 +3,13 @@
 Rust and C# are **first-class native implementations**, not a port. They share
 JSON contracts, SCPI fixtures, and CI gates. They do **not** share a runtime.
 
-This is the working plan for remaining work after Streams A–F. Update this file
+This is the working plan for remaining work after Streams A–G. Update this file
 when a decision changes.
 
-## Current state (after A–F)
+## Current state (after A–G)
 
-Merged into `latest` as PRs #5–#8, #10, and #11. Stream G is this branch.
+Merged into `latest` as PRs #5–#8, #10, and #11. Stream G (DMM/PSU transcripts)
+is the parent of this branch. Stream H is this branch.
 
 | Stream | PR | What landed |
 |--------|----|-------------|
@@ -18,6 +19,7 @@ Merged into `latest` as PRs #5–#8, #10, and #11. Stream G is this branch.
 | D | #8 | C# examples, multi-session test, dual-native docs, Counter timeout + scope binary waveform **deferred** |
 | E | #10 | Query retry+flush, honest OPC/ERR probes, Ok(0) fail-closed, framed reads do not reconnect before flush, Rust async Drop restore |
 | F | #11 | Dialect emission for DMM/PSU/FGen/scope/switch/counter with fallback; leftover-placeholder + extra-optional-var hardening; CI `TestDialect*` fixtures |
+| G | parent | Golden DMM/PSU transcripts, Keithley DMM6500 + Keysight N6705C vendor JSON dialects |
 
 Dialect emission: PowerMeter and SpectrumAnalyzer **require** dialect keys.
 DMM, PSU, function generator, oscilloscope, switch, and counter use
@@ -72,11 +74,11 @@ VISA. Do not confuse the two.
 
 ```text
 latest  (includes F as #11)
-  └─ G  DMM + PSU transcripts + 1–2 vendor profiles
-        └─ H  self-hosted hardware smoke (not GitHub-hosted)
+  └─ G  DMM + PSU transcripts + vendor profiles
+        └─ H  self-hosted hardware smoke (this branch; not GitHub-hosted)
 ```
 
-F is merged. H is self-hosted and does not block G.
+G is the stack parent. H does not change GitHub-hosted MockTransport CI.
 
 ---
 
@@ -299,20 +301,31 @@ if needed). Registry expansion.
 
 ## Stream H — Self-hosted hardware smoke
 
-**Goal:** One ignored-by-default job that talks to a real instrument on a
-self-hosted runner. Not GitHub-hosted. Not vendor emulators (they do not exist
-for this stack).
+**Goal:** One ignored-by-default job that talks to a real DMM on a self-hosted
+runner. Not GitHub-hosted. Not vendor emulators (they do not exist for this
+stack).
 
 **Approach:**
 
-1. Keep `crates/instrument/tests/hardware.rs` `#[ignore]` for GitHub-hosted CI.
-2. Add a workflow `workflow_dispatch` / self-hosted label that sets
-   `INSTRUMENT_RESOURCE` (or existing env) and runs `--ignored` hardware tests.
-3. Start with **one** class (DMM or PSU from G) and one resource string.
-4. Record the first passing run as evidence before any `0.2.0` discussion.
+1. Keep `crates/instrument/tests/hardware.rs` `#[ignore]` and C#
+   `HardwareTests` in `Category=Hardware` so GitHub-hosted CI never opens
+   VISA. Existing discover / first-device IDN tests stay local-only.
+2. Add `.github/workflows/hardware.yml`: `workflow_dispatch` only, `runs-on:
+   [self-hosted, visa]`. Input `instrument_resource` becomes
+   `INSTRUMENT_RESOURCE`. Jobs measure DC voltage in Rust and C# (or one
+   suite). Concurrency group `hardware-smoke` so two dispatches do not share
+   the instrument.
+3. Smoke is **one class** (DMM) and **one resource**. Discovery uses
+   `StaticEnumerator` / `StaticEnumerator.FromAddresses` so the rest of the
+   bench is not probed. The instrument must classify as `Dmm`. Reading must
+   be finite. Dialect resolution from `*IDN?` still applies (DMM6500 uses
+   the vendor profile from G).
+4. A passing dispatch log is hardware evidence. Landing the workflow is not.
+   Do not discuss `0.2.0` until that log exists.
 
 **Does not:** NI-VISA / Keysight IO Libraries on `ubuntu-latest`. PyVISA-sim.
-Changing MockTransport CI.
+Changing MockTransport CI (`ci.yml` / `dotnet.yml` mock jobs). PSU smoke.
+Oscilloscope binary.
 
 ---
 
