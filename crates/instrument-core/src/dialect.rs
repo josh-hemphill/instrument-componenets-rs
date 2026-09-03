@@ -125,10 +125,7 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
             ("reset_totalize", ":COUNter:CRESet"),
             ("read_totalize", ":COUNter:DATA?"),
             ("gate_time", ":SENSe:FREQuency:APERture {seconds}"),
-            (
-                "channel_select",
-                ":SENSe:FUNCtion:ON \\\"FREQ {channel}\\\"",
-            ),
+            ("channel_select", ":SENSe:FUNCtion:ON \"FREQ {channel}\""),
         ],
     },
     DialectProfile {

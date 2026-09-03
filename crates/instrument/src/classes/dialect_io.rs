@@ -138,6 +138,18 @@ mod tests {
     }
 
     #[test]
+    fn try_formatted_unescapes_quoted_scpi() {
+        let counter = resolve_dialect(InstrumentKind::Counter, None, None);
+        let cmd = try_formatted(
+            counter,
+            "channel_select",
+            &[("channel", "1".into())],
+            "FALLBACK".into(),
+        );
+        assert_eq!(cmd, ":SENSe:FUNCtion:ON \"FREQ 1\"");
+    }
+
+    #[test]
     fn try_formatted_falls_back_on_leftover_placeholders() {
         let fgen = resolve_dialect(InstrumentKind::FunctionGenerator, None, None);
         let cmd = try_formatted(fgen, "set_waveform", &[], "FALLBACK".into());

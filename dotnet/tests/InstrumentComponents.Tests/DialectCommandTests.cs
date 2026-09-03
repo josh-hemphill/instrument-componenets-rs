@@ -32,6 +32,14 @@ public class DialectCommandTests
     }
 
     [Fact]
+    public void TryUnescapesQuotedScpi()
+    {
+        var counter = DialectRegistry.Resolve(InstrumentKind.Counter);
+        var cmd = DialectCommand.Try(counter, "channel_select", "FALLBACK", ("channel", "1"));
+        Assert.Equal(":SENSe:FUNCtion:ON \"FREQ 1\"", cmd);
+    }
+
+    [Fact]
     public void TryFallsBackOnLeftoverPlaceholders()
     {
         var fgen = DialectRegistry.Resolve(InstrumentKind.FunctionGenerator);

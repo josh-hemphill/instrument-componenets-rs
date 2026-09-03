@@ -43,10 +43,7 @@ for (const raw of text.split("\n")) {
   const eq = line.indexOf("=");
   if (eq < 0 || !current) continue;
   const key = line.slice(0, eq).trim();
-  let value = line.slice(eq + 1).trim();
-  if (value.startsWith('"') && value.endsWith('"')) {
-    value = value.slice(1, -1);
-  }
+  const value = unescapeTomlString(line.slice(eq + 1).trim());
   if (inCommands) {
     current.commands![key] = value;
   } else if (key === "channels") {
@@ -56,6 +53,13 @@ for (const raw of text.split("\n")) {
   }
 }
 if (current?.id) profiles.push(current as Profile);
+
+function unescapeTomlString(value: string): string {
+  if (!(value.startsWith('"') && value.endsWith('"'))) {
+    return value;
+  }
+  return value.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+}
 
 const scpiToml = await Deno.readTextFile(
   new URL("crates/instrument-core/data/scpi_commands.toml", root),
@@ -78,11 +82,7 @@ function parseTomlTables(text: string): Record<string, Record<string, string>> {
     const eq = line.indexOf("=");
     if (eq < 0 || !current) continue;
     const key = line.slice(0, eq).trim();
-    let value = line.slice(eq + 1).trim();
-    if (value.startsWith('"') && value.endsWith('"')) {
-      value = value.slice(1, -1);
-    }
-    tables[current][key] = value;
+    tables[current][key] = unescapeTomlString(line.slice(eq + 1).trim());
   }
   return tables;
 }
