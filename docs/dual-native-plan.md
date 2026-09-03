@@ -235,8 +235,13 @@ session dialect first and fall back to `scpi_commands` / `ScpiCommands`.
 **Approach:**
 
 1. Reuse `crates/instrument/src/classes/dialect_io.rs` (`try_command`,
-   `try_formatted`). Missing key, vars the template cannot take, or leftover
-   `{ident}` placeholders → fallback so ranged DMM measures keep the range.
+   `try_formatted`). Missing key → fallback. Leftover `{ident}` placeholders
+   → fallback (including no-arg `try_command`, so Rust cannot emit braces
+   that C# would reject). Extra supplied vars that the template does not
+   mention are ignored when the template has placeholders (vendor `{range}`
+   still runs if `{resolution}` is also passed). A constant template cannot
+   represent any supplied var, so those calls fall back (ranged DMM measure
+   keeps the range).
 2. Command ids are dialect keys in `profiles.toml` plus fallback templates in
    `scpi_commands.toml` / generated `ScpiCommands`. There is no
    `spec/commands.json`.
@@ -245,12 +250,15 @@ session dialect first and fall back to `scpi_commands` / `ScpiCommands`.
 4. Oscilloscope **binary waveform** (`#N` IEEE block) stays **deferred**. ASCII
    capture remains the supported path.
 
-**Tests:** MockTransport scripts covering dialect-resolved commands (existing
-catalog tests; generic strings match fallback) plus explicit fallback:
-DMM measure with range (`:MEAS:VOLT:DC? 10`), FGen `read_frequency`
-(`:SOUR:FREQ?`), scope `read_timebase_scale` (`:TIMebase:SCALe?`).
+**Tests:** MockTransport scripts covering dialect-resolved commands plus
+explicit fallback: DMM measure with range (`:MEAS:VOLT:DC? 10`), FGen
+`read_frequency` (`:SOUR:FREQ?`), scope `read_timebase_scale`
+(`:TIMebase:SCALe?`). CI fixture profiles `ci_dmm_dialect_wins` /
+`ci_psu_dialect_wins` (IDN `TestDialect*`) prove a non-generic profile is
+selected and emits different SCPI, leftover `{channel}` on `read` falls back,
+and extra optional configure args do not drop `{range}`.
 
-**Does not:** Add vendor profiles (G). Expand the class registry. Scope binary.
+**Does not:** Add hardware vendor profiles (G). Expand the class registry. Scope binary.
 
 ---
 

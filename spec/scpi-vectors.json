@@ -55,6 +55,20 @@
       "manufacturer": "Keysight Technologies",
       "model": "34461A",
       "expectedProfile": "generic_dmm"
+    },
+    {
+      "id": "ci-dmm-dialect-wins",
+      "kind": "Dmm",
+      "manufacturer": "TestDialect Corp",
+      "model": "DMM-X",
+      "expectedProfile": "ci_dmm_dialect_wins"
+    },
+    {
+      "id": "ci-psu-dialect-wins",
+      "kind": "DcPowerSupply",
+      "manufacturer": "TestDialect Corp",
+      "model": "PSU-X",
+      "expectedProfile": "ci_psu_dialect_wins"
     }
   ],
   "dialectCommands": [
@@ -113,6 +127,14 @@
       "model": null,
       "key": "read",
       "command": "READ?"
+    },
+    {
+      "id": "ci-dmm-measure",
+      "kind": "Dmm",
+      "manufacturer": "TestDialect Corp",
+      "model": "DMM-X",
+      "key": "measure_voltage_dc",
+      "command": ":MEAS:VOLT:DC:TEST?"
     }
   ],
   "formattedCommands": [
@@ -142,6 +164,15 @@
       "key": "unit",
       "vars": { "unit": "DBM" },
       "command": ":UNIT:POW DBM"
+    },
+    {
+      "id": "ci-psu-set-voltage",
+      "kind": "DcPowerSupply",
+      "manufacturer": "TestDialect Corp",
+      "model": "PSU-X",
+      "key": "set_voltage",
+      "vars": { "channel": "1", "volts": "3.3" },
+      "command": ":VOLT 3.3,(@1)"
     }
   ]
 }

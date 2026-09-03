@@ -142,3 +142,31 @@ fn fixture_scope_read_timebase_falls_back() {
     let scale = scope.read_timebase_scale().unwrap();
     assert!((scale - 0.001).abs() < 1e-12);
 }
+
+#[test]
+fn fixture_dmm_dialect_wins_over_generic() {
+    let fixture = ScriptedFixture::builder()
+        .idn("TestDialect Corp", "DMM-X", "SN1", "1.0")
+        .kinds([InstrumentKind::Dmm])
+        .on_write(":CONF:VOLT:DC 10")
+        .on_query(":MEAS:VOLT:DC:TEST?", "1.0")
+        .on_query("READ?", "2.345")
+        .build();
+    let catalog = DeviceCatalog::from_fixture("mock://dmm-dialect", fixture).unwrap();
+    let mut dmm = catalog.open_dmm("mock://dmm-dialect").unwrap();
+    dmm.configure_voltage_dc(Some(10.0), Some(0.001)).unwrap();
+    assert!((dmm.measure_voltage_dc(None).unwrap() - 1.0).abs() < 1e-9);
+    assert!((dmm.read().unwrap() - 2.345).abs() < 1e-9);
+}
+
+#[test]
+fn fixture_psu_dialect_wins_over_generic() {
+    let fixture = ScriptedFixture::builder()
+        .idn("TestDialect Corp", "PSU-X", "SN1", "1.0")
+        .kinds([InstrumentKind::DcPowerSupply])
+        .on_write(":VOLT 3.3,(@1)")
+        .build();
+    let catalog = DeviceCatalog::from_fixture("mock://psu-dialect", fixture).unwrap();
+    let mut psu = catalog.open_dc_power_supply("mock://psu-dialect").unwrap();
+    psu.set_voltage(1, 3.3).unwrap();
+}

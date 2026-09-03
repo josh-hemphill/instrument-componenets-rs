@@ -44,14 +44,23 @@ pub(crate) fn range_resolution_vars(
 }
 
 /// Dialect command, or `fallback` when the profile has no template for `key`.
+///
+/// Templates that still contain `{ident}` placeholders are rejected so a
+/// no-arg path cannot emit braces (C# `DialectCommand.Try` already did this).
 pub(crate) fn try_command<'a>(profile: &DialectProfile, key: &str, fallback: &'a str) -> &'a str {
     match profile.command(key) {
-        Some(cmd) => cmd,
-        None => fallback,
+        Some(cmd) if !has_unreplaced_placeholder(cmd) => cmd,
+        _ => fallback,
     }
 }
 
-/// Dialect-formatted command, or `fallback` when the template is missing or cannot take `vars`.
+/// Dialect-formatted command, or `fallback` when the template is missing or unusable.
+///
+/// Use the dialect when every placeholder in the template can be filled.
+/// Extra supplied vars that the template does not mention are ignored when the
+/// template has placeholders (vendor `{range}` still runs if `{resolution}` is
+/// also passed). A constant template cannot represent any supplied var, so
+/// those calls fall back (ranged DMM measure keeps the range).
 pub(crate) fn try_formatted(
     profile: &DialectProfile,
     key: &str,
@@ -61,10 +70,10 @@ pub(crate) fn try_formatted(
     let Some(template) = profile.command(key) else {
         return fallback;
     };
-    if vars
+    let extras = vars
         .iter()
-        .any(|(name, _)| !template.contains(&format!("{{{name}}}")))
-    {
+        .any(|(name, _)| !template.contains(&format!("{{{name}}}")));
+    if extras && !has_unreplaced_placeholder(template) {
         return fallback;
     }
     let Some(formatted) = profile.format_command(key, vars) else {
@@ -100,14 +109,34 @@ fn has_unreplaced_placeholder(s: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use instrument_core::dialect::resolve_dialect;
+    use instrument_core::dialect::{resolve_dialect, DialectProfile};
     use instrument_core::kind::InstrumentKind;
+
+    fn test_profile(commands: &'static [(&'static str, &'static str)]) -> DialectProfile {
+        DialectProfile {
+            id: "test",
+            kind: InstrumentKind::Dmm,
+            manufacturer_glob: "*",
+            model_glob: "*",
+            channels: 1,
+            commands,
+        }
+    }
 
     #[test]
     fn try_command_uses_dialect_then_fallback() {
         let dmm = resolve_dialect(InstrumentKind::Dmm, None, None);
         assert_eq!(try_command(dmm, "initiate", "FALLBACK"), "INIT");
         assert_eq!(try_command(dmm, "missing", "FALLBACK"), "FALLBACK");
+    }
+
+    #[test]
+    fn try_command_falls_back_on_leftover_placeholders() {
+        let profile = test_profile(&[("read_frequency", ":SOUR{channel}:FREQ?")]);
+        assert_eq!(
+            try_command(&profile, "read_frequency", "FALLBACK"),
+            "FALLBACK"
+        );
     }
 
     #[test]
@@ -154,5 +183,17 @@ mod tests {
         let fgen = resolve_dialect(InstrumentKind::FunctionGenerator, None, None);
         let cmd = try_formatted(fgen, "set_waveform", &[], "FALLBACK".into());
         assert_eq!(cmd, "FALLBACK");
+    }
+
+    #[test]
+    fn try_formatted_ignores_extra_optional_vars() {
+        let profile = test_profile(&[("configure_voltage_dc", ":CONF:VOLT:DC {range}")]);
+        let cmd = try_formatted(
+            &profile,
+            "configure_voltage_dc",
+            &[("range", "10".into()), ("resolution", "0.001".into())],
+            "FALLBACK".into(),
+        );
+        assert_eq!(cmd, ":CONF:VOLT:DC 10");
     }
 }

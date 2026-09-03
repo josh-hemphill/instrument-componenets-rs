@@ -26,7 +26,8 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | New kinds (scope/switch/counter) | `crates/instrument/tests/new_instrument_kinds.rs` | `NewInstrumentKindTests` | |
 | Class depth Dmm/Psu | `crates/instrument/tests/mock_catalog.rs` | `MockCatalogTests` | AC/Ω/temp, INIT/FETC, OVP/sense |
 | Class depth Scope/Fgen | `new_instrument_kinds.rs` | `NewInstrumentKindTests` | Trigger/measure, burst/duty |
-| Dialect fallback (DMM range, FGen freq, scope timebase) | `mock_catalog.rs`, `dialect_io` tests | `MockCatalogTests`, `DialectCommandTests` | Generic profile has no `{range}` / `read_frequency` / `read_timebase_scale` |
+| Dialect fallback (DMM range, FGen freq, scope timebase) | `mock_catalog.rs`, `async_mock_catalog.rs`, `dialect_io` tests | `MockCatalogTests`, `DialectCommandTests` | Generic profile has no `{range}` / `read_frequency` / `read_timebase_scale` |
+| Dialect-wins (non-generic remaining classes) | `mock_catalog.rs`, `async_mock_catalog.rs` | `MockCatalogTests` | CI fixtures `ci_dmm_dialect_wins` / `ci_psu_dialect_wins` (`TestDialect*`) |
 | PowerMeter + SpectrumAnalyzer | `new_instrument_kinds.rs` | `NewInstrumentKindTests` | Open + configure/read / sweep |
 | SCPI framing | `instrument-core` framing unit tests | `FramingTests` | |
 | Address parse | core address tests | `AddressTests` | |

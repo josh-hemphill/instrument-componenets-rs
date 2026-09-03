@@ -6,12 +6,30 @@ namespace InstrumentComponents.Tests;
 
 public class DialectCommandTests
 {
+    private static DialectProfile TestProfile(params (string Key, string Command)[] commands) =>
+        new()
+        {
+            Id = "test",
+            Kind = InstrumentKind.Dmm,
+            ManufacturerGlob = "*",
+            ModelGlob = "*",
+            Channels = 1,
+            Commands = commands.ToDictionary(c => c.Key, c => c.Command),
+        };
+
     [Fact]
     public void TryUsesDialectThenFallback()
     {
         var dmm = DialectRegistry.Resolve(InstrumentKind.Dmm);
         Assert.Equal("INIT", DialectCommand.Try(dmm, "initiate", "FALLBACK"));
         Assert.Equal("FALLBACK", DialectCommand.Try(dmm, "missing", "FALLBACK"));
+    }
+
+    [Fact]
+    public void TryCommandFallsBackOnLeftoverPlaceholders()
+    {
+        var profile = TestProfile(("read_frequency", ":SOUR{channel}:FREQ?"));
+        Assert.Equal("FALLBACK", DialectCommand.Try(profile, "read_frequency", "FALLBACK"));
     }
 
     [Fact]
@@ -44,5 +62,18 @@ public class DialectCommandTests
     {
         var fgen = DialectRegistry.Resolve(InstrumentKind.FunctionGenerator);
         Assert.Equal("FALLBACK", DialectCommand.Try(fgen, "set_waveform", "FALLBACK"));
+    }
+
+    [Fact]
+    public void TryIgnoresExtraOptionalVars()
+    {
+        var profile = TestProfile(("configure_voltage_dc", ":CONF:VOLT:DC {range}"));
+        var cmd = DialectCommand.Try(
+            profile,
+            "configure_voltage_dc",
+            "FALLBACK",
+            ("range", "10"),
+            ("resolution", "0.001"));
+        Assert.Equal(":CONF:VOLT:DC 10", cmd);
     }
 }

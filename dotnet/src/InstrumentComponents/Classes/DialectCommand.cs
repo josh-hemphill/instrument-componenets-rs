@@ -3,7 +3,11 @@ using InstrumentComponents.Scpi;
 
 namespace InstrumentComponents.Classes;
 
-/// <summary>Resolves a dialect SCPI template, falling back when the profile cannot emit the command.</summary>
+/// <summary>
+/// Resolves a dialect SCPI template, falling back when the profile cannot emit the command.
+/// Extra optional vars are ignored when the template has placeholders; leftover
+/// <c>{ident}</c> placeholders and constant templates that cannot represent supplied vars fall back.
+/// </summary>
 internal static class DialectCommand
 {
     public static string Try(DialectProfile dialect, string key, string fallback, params (string Name, string Value)[] vars)
@@ -11,11 +15,14 @@ internal static class DialectCommand
         var template = dialect.Command(key);
         if (template is null)
             return fallback;
+        var extras = false;
         foreach (var (name, _) in vars)
         {
             if (!template.Contains("{" + name + "}", StringComparison.Ordinal))
-                return fallback;
+                extras = true;
         }
+        if (extras && !HasUnreplacedPlaceholder(template))
+            return fallback;
         var formatted = dialect.FormatCommand(key, vars);
         if (formatted is null || HasUnreplacedPlaceholder(formatted))
             return fallback;
