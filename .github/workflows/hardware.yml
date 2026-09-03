@@ -1,0 +1,66 @@
+# Self-hosted DMM smoke. Not GitHub-hosted. Does not install vendor VISA.
+#
+# Requires a GitHub Actions runner labeled `self-hosted` and `visa` with:
+#   - NI-VISA or Keysight IO Libraries (linkable libvisa / VISA.NET)
+#   - a connected DMM
+#   - Rust stable (or network to install it) and .NET 8
+#
+# Dispatch: Actions → Hardware smoke → Run workflow → INSTRUMENT_RESOURCE
+# (USB/GPIB/TCPIP INSTR). First passing run is hardware evidence for 0.2.0;
+# landing this workflow is not that evidence.
+name: Hardware smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      instrument_resource:
+        description: VISA resource string for one DMM (USB, GPIB, or TCPIP INSTR)
+        required: true
+        type: string
+      suite:
+        description: Which language suite to run
+        required: true
+        type: choice
+        options:
+          - both
+          - rust
+          - csharp
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hardware-smoke
+  cancel-in-progress: false
+
+jobs:
+  rust-dmm:
+    name: Rust DMM measure
+    if: ${{ inputs.suite == 'both' || inputs.suite == 'rust' }}
+    runs-on: [self-hosted, visa]
+    timeout-minutes: 15
+    env:
+      CARGO_TERM_COLOR: always
+      INSTRUMENT_RESOURCE: ${{ inputs.instrument_resource }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Measure DC voltage
+        run: cargo test -p instrument-components --features visa --test hardware dmm_measure_voltage_dc_smoke -- --ignored --nocapture --exact
+
+  csharp-dmm:
+    name: C# DMM measure
+    if: ${{ inputs.suite == 'both' || inputs.suite == 'csharp' }}
+    runs-on: [self-hosted, visa]
+    timeout-minutes: 15
+    env:
+      DOTNET_NOLOGO: true
+      INSTRUMENT_RESOURCE: ${{ inputs.instrument_resource }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Measure DC voltage
+        run: dotnet test dotnet/tests/InstrumentComponents.Visa.Tests/InstrumentComponents.Visa.Tests.csproj -c Release --filter "FullyQualifiedName~DmmMeasureVoltageDcSmoke" --logger "console;verbosity=normal"
