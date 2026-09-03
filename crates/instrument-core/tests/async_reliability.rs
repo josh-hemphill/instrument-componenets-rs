@@ -33,15 +33,32 @@ impl Transport for TimeoutSpy {
     }
 }
 
-struct ZeroByteTransport;
+struct ReconnectProbe {
+    reconnects: Arc<Mutex<u32>>,
+    remaining_timeouts: u32,
+    zero_byte: bool,
+    payload: Option<Vec<u8>>,
+}
 
-impl Transport for ZeroByteTransport {
+impl Transport for ReconnectProbe {
     fn write(&mut self, _data: &[u8]) -> Result<()> {
         Ok(())
     }
 
-    fn read(&mut self, _buf: &mut [u8]) -> Result<usize> {
-        Ok(0)
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        if self.zero_byte {
+            return Ok(0);
+        }
+        if self.remaining_timeouts > 0 {
+            self.remaining_timeouts -= 1;
+            return Err(Error::Timeout);
+        }
+        if let Some(payload) = self.payload.take() {
+            let n = payload.len().min(buf.len());
+            buf[..n].copy_from_slice(&payload[..n]);
+            return Ok(n);
+        }
+        Err(Error::Transport(TransportError::Closed))
     }
 
     fn clear(&mut self) -> Result<()> {
@@ -49,6 +66,11 @@ impl Transport for ZeroByteTransport {
     }
 
     fn set_read_timeout(&mut self, _timeout: Duration) -> Result<()> {
+        Ok(())
+    }
+
+    fn reconnect(&mut self) -> Result<()> {
+        *self.reconnects.lock().expect("reconnect counter") += 1;
         Ok(())
     }
 }
@@ -221,10 +243,17 @@ async fn zero_byte_read_is_timeout_without_spin() {
     let mut opts = retry_opts();
     opts.retries = 0;
     opts.read_timeout = Duration::from_secs(10);
-    let mut session =
-        AsyncScpiSession::new(Box::new(SyncAsAsyncTransport::new(ZeroByteTransport)), opts)
-            .await
-            .unwrap();
+    let mut session = AsyncScpiSession::new(
+        Box::new(SyncAsAsyncTransport::new(ReconnectProbe {
+            reconnects: Arc::new(Mutex::new(0)),
+            remaining_timeouts: 0,
+            zero_byte: true,
+            payload: None,
+        })),
+        opts,
+    )
+    .await
+    .unwrap();
     let started = Instant::now();
     let err = session.query("*IDN?").await.unwrap_err();
     assert!(matches!(err, Error::Timeout));
@@ -253,4 +282,47 @@ async fn dropped_query_restores_io_timeout() {
     let timed_out = tokio::time::timeout(Duration::from_millis(50), session.query("*IDN?")).await;
     assert!(timed_out.is_err(), "query future should still be pending");
     assert_eq!(*last.lock().expect("timeout spy"), Some(expected));
+}
+
+#[tokio::test]
+async fn zero_byte_read_does_not_reconnect() {
+    let reconnects = Arc::new(Mutex::new(0));
+    let mut opts = retry_opts();
+    opts.retries = 0;
+    opts.reconnect_on_failure = true;
+    let mut session = AsyncScpiSession::new(
+        Box::new(SyncAsAsyncTransport::new(ReconnectProbe {
+            reconnects: reconnects.clone(),
+            remaining_timeouts: 0,
+            zero_byte: true,
+            payload: None,
+        })),
+        opts,
+    )
+    .await
+    .unwrap();
+    let err = session.query("*IDN?").await.unwrap_err();
+    assert!(matches!(err, Error::Timeout));
+    assert_eq!(*reconnects.lock().expect("reconnect counter"), 0);
+}
+
+#[tokio::test]
+async fn query_read_timeout_reconnects_once_then_succeeds() {
+    let reconnects = Arc::new(Mutex::new(0));
+    let mut opts = retry_opts();
+    opts.reconnect_on_failure = true;
+    let mut session = AsyncScpiSession::new(
+        Box::new(SyncAsAsyncTransport::new(ReconnectProbe {
+            reconnects: reconnects.clone(),
+            remaining_timeouts: 2,
+            zero_byte: false,
+            payload: Some(b"3.3\n".to_vec()),
+        })),
+        opts,
+    )
+    .await
+    .unwrap();
+    let volts = session.query(":MEAS:VOLT:DC?").await.unwrap();
+    assert_eq!(volts.trim(), "3.3");
+    assert_eq!(*reconnects.lock().expect("reconnect counter"), 1);
 }

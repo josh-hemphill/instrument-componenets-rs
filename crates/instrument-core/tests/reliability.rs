@@ -50,6 +50,48 @@ impl Transport for ZeroByteTransport {
     }
 }
 
+struct ReconnectProbe {
+    reconnects: Arc<Mutex<u32>>,
+    remaining_timeouts: u32,
+    zero_byte: bool,
+    payload: Option<Vec<u8>>,
+}
+
+impl Transport for ReconnectProbe {
+    fn write(&mut self, _data: &[u8]) -> Result<()> {
+        Ok(())
+    }
+
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        if self.zero_byte {
+            return Ok(0);
+        }
+        if self.remaining_timeouts > 0 {
+            self.remaining_timeouts -= 1;
+            return Err(Error::Timeout);
+        }
+        if let Some(payload) = self.payload.take() {
+            let n = payload.len().min(buf.len());
+            buf[..n].copy_from_slice(&payload[..n]);
+            return Ok(n);
+        }
+        Err(Error::Transport(TransportError::Closed))
+    }
+
+    fn clear(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn set_read_timeout(&mut self, _timeout: Duration) -> Result<()> {
+        Ok(())
+    }
+
+    fn reconnect(&mut self) -> Result<()> {
+        *self.reconnects.lock().expect("reconnect counter") += 1;
+        Ok(())
+    }
+}
+
 fn retry_opts() -> ConnectOptions {
     ConnectOptions {
         retries: 1,
@@ -220,4 +262,45 @@ fn opc_and_syst_err_reply_parsers() {
     assert!(!is_opc_supported_reply("-113,\"Undefined header\""));
     assert!(is_syst_err_supported_reply("0,\"No error\""));
     assert!(!is_syst_err_supported_reply("OK"));
+}
+
+#[test]
+fn zero_byte_read_does_not_reconnect() {
+    let reconnects = Arc::new(Mutex::new(0));
+    let mut opts = retry_opts();
+    opts.retries = 0;
+    opts.reconnect_on_failure = true;
+    let mut session = ScpiSession::new(
+        Box::new(ReconnectProbe {
+            reconnects: reconnects.clone(),
+            remaining_timeouts: 0,
+            zero_byte: true,
+            payload: None,
+        }),
+        opts,
+    )
+    .unwrap();
+    let err = session.query("*IDN?").unwrap_err();
+    assert!(matches!(err, Error::Timeout));
+    assert_eq!(*reconnects.lock().expect("reconnect counter"), 0);
+}
+
+#[test]
+fn query_read_timeout_reconnects_once_then_succeeds() {
+    let reconnects = Arc::new(Mutex::new(0));
+    let mut opts = retry_opts();
+    opts.reconnect_on_failure = true;
+    let mut session = ScpiSession::new(
+        Box::new(ReconnectProbe {
+            reconnects: reconnects.clone(),
+            remaining_timeouts: 2,
+            zero_byte: false,
+            payload: Some(b"3.3\n".to_vec()),
+        }),
+        opts,
+    )
+    .unwrap();
+    let volts = session.query(":MEAS:VOLT:DC?").unwrap();
+    assert_eq!(volts.trim(), "3.3");
+    assert_eq!(*reconnects.lock().expect("reconnect counter"), 1);
 }

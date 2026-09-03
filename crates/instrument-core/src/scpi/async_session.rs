@@ -322,9 +322,6 @@ async fn read_framed_response(
                         return Ok(payload);
                     }
                 }
-                if opts.reconnect_on_failure && transport.reconnect().await.is_ok() {
-                    record_reconnect(diagnostics);
-                }
                 record_failure(
                     diagnostics,
                     CommsEventKind::Timeout,

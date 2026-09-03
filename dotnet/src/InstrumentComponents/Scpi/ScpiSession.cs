@@ -150,51 +150,15 @@ public sealed class ScpiSession : IDisposable
             while (true)
             {
                 var started = DateTime.UtcNow;
+                int n;
                 try
                 {
-                    var n = _transport.Read(chunk);
-                    if (n == 0)
-                    {
-                        if (_readBuffer.Count > 0)
-                        {
-                            try
-                            {
-                                var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
-                                RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
-                                return payload;
-                            }
-                            catch (InstrumentTimeoutException) { /* incomplete frame */ }
-                        }
-                        RecordFailure(CommsEventKind.Timeout, command, 1, started, "zero-byte read");
-                        throw new InstrumentTimeoutException();
-                    }
-                    for (var i = 0; i < n; i++)
-                        _readBuffer.Add(chunk[i]);
-                    try
-                    {
-                        var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
-                        RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
-                        return payload;
-                    }
-                    catch (InstrumentTimeoutException)
-                    {
-                        // incomplete frame, keep reading
-                    }
+                    n = _transport.Read(chunk);
                 }
                 catch (InstrumentTimeoutException)
                 {
-                    if (_readBuffer.Count > 0)
-                    {
-                        try
-                        {
-                            var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
-                            RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
-                            return payload;
-                        }
-                        catch (InstrumentTimeoutException) { /* fall through */ }
-                    }
-                    if (_opts.ReconnectOnFailure)
-                        TryReconnect();
+                    if (TryCompleteBufferedFrame(command, started, out var timedOutPayload))
+                        return timedOutPayload;
                     RecordFailure(CommsEventKind.Timeout, command, 1, started, "read timeout");
                     throw;
                 }
@@ -203,12 +167,42 @@ public sealed class ScpiSession : IDisposable
                     RecordFailure(CommsEventKind.ReadFailed, command, 1, started, ex.Message);
                     throw;
                 }
+
+                if (n == 0)
+                {
+                    if (TryCompleteBufferedFrame(command, started, out var zeroPayload))
+                        return zeroPayload;
+                    RecordFailure(CommsEventKind.Timeout, command, 1, started, "zero-byte read");
+                    throw new InstrumentTimeoutException();
+                }
+
+                for (var i = 0; i < n; i++)
+                    _readBuffer.Add(chunk[i]);
+                if (TryCompleteBufferedFrame(command, started, out var payload))
+                    return payload;
             }
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
             RestoreIoTimeout();
+        }
+    }
+
+    private bool TryCompleteBufferedFrame(string? command, DateTime started, out byte[] payload)
+    {
+        payload = [];
+        if (_readBuffer.Count == 0)
+            return false;
+        try
+        {
+            (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
+            RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
+            return true;
+        }
+        catch (InstrumentTimeoutException)
+        {
+            return false;
         }
     }
 

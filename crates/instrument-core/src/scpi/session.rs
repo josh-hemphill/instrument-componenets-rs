@@ -226,9 +226,6 @@ impl ScpiSession {
                             return Ok(payload);
                         }
                     }
-                    if self.opts.reconnect_on_failure {
-                        self.try_reconnect();
-                    }
                     self.record_failure(
                         CommsEventKind::Timeout,
                         command.as_deref(),

@@ -123,6 +123,38 @@ public class ReliabilityTests
     }
 
     [Fact]
+    public void ZeroByteReadDoesNotReconnect()
+    {
+        var transport = new ReconnectProbeTransport { ZeroByte = true };
+        var session = new ScpiSession(transport, new ConnectOptions
+        {
+            Retries = 0,
+            ReconnectOnFailure = true,
+        });
+        Assert.Throws<InstrumentTimeoutException>(() => session.Query("*IDN?"));
+        Assert.Equal(0, transport.Reconnects);
+    }
+
+    [Fact]
+    public void QueryReadTimeoutReconnectsOnceThenSucceeds()
+    {
+        var transport = new ReconnectProbeTransport
+        {
+            RemainingTimeouts = 2,
+            Payload = "3.3\n"u8.ToArray(),
+        };
+        var session = new ScpiSession(transport, new ConnectOptions
+        {
+            Retries = 1,
+            RetryBackoff = TimeSpan.FromMilliseconds(1),
+            ReconnectOnFailure = true,
+        });
+        var volts = session.Query(":MEAS:VOLT:DC?");
+        Assert.Equal("3.3", volts.Trim());
+        Assert.Equal(1, transport.Reconnects);
+    }
+
+    [Fact]
     public void ProbeSystErrIsFalseWhenQueryFails()
     {
         var transport = new MockTransport([
@@ -209,6 +241,38 @@ public class ReliabilityTests
         var transport = new OpcThenFailRestoreTransport();
         var session = new ScpiSession(transport, new ConnectOptions { ReconnectOnFailure = false });
         Assert.True(session.ProbeOpc());
+    }
+
+    private sealed class ReconnectProbeTransport : TransportBase
+    {
+        public int Reconnects { get; private set; }
+        public uint RemainingTimeouts { get; set; }
+        public bool ZeroByte { get; set; }
+        public byte[]? Payload { get; set; }
+
+        public override void Write(ReadOnlySpan<byte> data) { }
+
+        public override int Read(Span<byte> buffer)
+        {
+            if (ZeroByte)
+                return 0;
+            if (RemainingTimeouts > 0)
+            {
+                RemainingTimeouts--;
+                throw new InstrumentTimeoutException();
+            }
+            if (Payload is { } data)
+            {
+                Payload = null;
+                data.CopyTo(buffer);
+                return data.Length;
+            }
+            throw new TransportClosedException();
+        }
+
+        public override void Clear() { }
+        public override void SetReadTimeout(TimeSpan timeout) { }
+        public override void Reconnect() => Reconnects++;
     }
 
     private sealed class ZeroByteTransport : TransportBase

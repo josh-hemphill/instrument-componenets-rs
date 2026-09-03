@@ -159,48 +159,15 @@ public sealed class AsyncScpiSession : IDisposable
             while (true)
             {
                 var started = DateTime.UtcNow;
+                int n;
                 try
                 {
-                    var n = await _transport.ReadAsync(chunk, cancellationToken).ConfigureAwait(false);
-                    if (n == 0)
-                    {
-                        if (_readBuffer.Count > 0)
-                        {
-                            try
-                            {
-                                var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
-                                RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
-                                return payload;
-                            }
-                            catch (InstrumentTimeoutException) { }
-                        }
-                        RecordFailure(CommsEventKind.Timeout, command, 1, started, "zero-byte read");
-                        throw new InstrumentTimeoutException();
-                    }
-                    for (var i = 0; i < n; i++)
-                        _readBuffer.Add(chunk[i]);
-                    try
-                    {
-                        var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
-                        RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
-                        return payload;
-                    }
-                    catch (InstrumentTimeoutException) { }
+                    n = await _transport.ReadAsync(chunk, cancellationToken).ConfigureAwait(false);
                 }
                 catch (InstrumentTimeoutException)
                 {
-                    if (_readBuffer.Count > 0)
-                    {
-                        try
-                        {
-                            var (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
-                            RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
-                            return payload;
-                        }
-                        catch (InstrumentTimeoutException) { }
-                    }
-                    if (_opts.ReconnectOnFailure)
-                        await TryReconnectAsync(cancellationToken).ConfigureAwait(false);
+                    if (TryCompleteBufferedFrame(command, started, out var timedOutPayload))
+                        return timedOutPayload;
                     RecordFailure(CommsEventKind.Timeout, command, 1, started, "read timeout");
                     throw;
                 }
@@ -209,12 +176,42 @@ public sealed class AsyncScpiSession : IDisposable
                     RecordFailure(CommsEventKind.ReadFailed, command, 1, started, ex.Message);
                     throw;
                 }
+
+                if (n == 0)
+                {
+                    if (TryCompleteBufferedFrame(command, started, out var zeroPayload))
+                        return zeroPayload;
+                    RecordFailure(CommsEventKind.Timeout, command, 1, started, "zero-byte read");
+                    throw new InstrumentTimeoutException();
+                }
+
+                for (var i = 0; i < n; i++)
+                    _readBuffer.Add(chunk[i]);
+                if (TryCompleteBufferedFrame(command, started, out var payload))
+                    return payload;
             }
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(chunk);
             await RestoreIoTimeoutAsync().ConfigureAwait(false);
+        }
+    }
+
+    private bool TryCompleteBufferedFrame(string? command, DateTime started, out byte[] payload)
+    {
+        payload = [];
+        if (_readBuffer.Count == 0)
+            return false;
+        try
+        {
+            (payload, _) = ScpiFraming.ExtractResponse(_readBuffer.ToArray(), _opts.Terminator);
+            RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
+            return true;
+        }
+        catch (InstrumentTimeoutException)
+        {
+            return false;
         }
     }
 

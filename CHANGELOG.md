@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Queries retry the write+read pair after a timed-out read, flushing stale data first
+- Framed reads do not reconnect; query retry flushes first, then reconnects once
+- C# zero-byte reads time out without a second failure record or reconnect
 - `*OPC?` / `SYST:ERR?` probes cache support only for real OPC (`1`/`+1`) and SCPI error-queue (`code,message`) replies
 - Framed reads treat a successful 0-byte `read` as timeout instead of spinning
 - Rust async sessions restore I/O timeout if the query/flush future is dropped (cancel)

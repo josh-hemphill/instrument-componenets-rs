@@ -79,6 +79,73 @@ public class AsyncReliabilityTests
         await Assert.ThrowsAsync<InstrumentTimeoutException>(() => session.QueryAsync("*IDN?"));
         Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(2), "zero-byte read spun instead of failing closed");
     }
+
+    [Fact]
+    public async Task ZeroByteReadDoesNotReconnect()
+    {
+        var transport = new ReconnectProbeAsyncTransport { ZeroByte = true };
+        var session = await AsyncScpiSession.CreateAsync(transport, new ConnectOptions
+        {
+            Retries = 0,
+            ReconnectOnFailure = true,
+        });
+        await Assert.ThrowsAsync<InstrumentTimeoutException>(() => session.QueryAsync("*IDN?"));
+        Assert.Equal(0, transport.Reconnects);
+    }
+
+    [Fact]
+    public async Task QueryReadTimeoutReconnectsOnceThenSucceeds()
+    {
+        var transport = new ReconnectProbeAsyncTransport
+        {
+            RemainingTimeouts = 2,
+            Payload = "3.3\n"u8.ToArray(),
+        };
+        var session = await AsyncScpiSession.CreateAsync(transport, new ConnectOptions
+        {
+            Retries = 1,
+            RetryBackoff = TimeSpan.FromMilliseconds(1),
+            ReconnectOnFailure = true,
+        });
+        var volts = await session.QueryAsync(":MEAS:VOLT:DC?");
+        Assert.Equal("3.3", volts.Trim());
+        Assert.Equal(1, transport.Reconnects);
+    }
+}
+
+sealed class ReconnectProbeAsyncTransport : AsyncTransportBase
+{
+    public int Reconnects { get; private set; }
+    public uint RemainingTimeouts { get; set; }
+    public bool ZeroByte { get; set; }
+    public byte[]? Payload { get; set; }
+
+    public override ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default) =>
+        ValueTask.CompletedTask;
+
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        if (ZeroByte)
+            return ValueTask.FromResult(0);
+        if (RemainingTimeouts > 0)
+        {
+            RemainingTimeouts--;
+            return ValueTask.FromException<int>(new InstrumentTimeoutException());
+        }
+        if (Payload is { } data)
+        {
+            Payload = null;
+            data.CopyTo(buffer.Span);
+            return ValueTask.FromResult(data.Length);
+        }
+        return ValueTask.FromException<int>(new TransportClosedException());
+    }
+
+    public override ValueTask ReconnectAsync(CancellationToken cancellationToken = default)
+    {
+        Reconnects++;
+        return ValueTask.CompletedTask;
+    }
 }
 
 sealed class ZeroByteAsyncTransport : AsyncTransportBase
