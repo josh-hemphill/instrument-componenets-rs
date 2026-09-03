@@ -31,6 +31,32 @@ public static class DialectRegistry
     {
         new DialectProfile
         {
+            Id = "ci_dmm_dialect_wins",
+            Kind = InstrumentKind.Dmm,
+            ManufacturerGlob = "TestDialect*",
+            ModelGlob = "*",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["measure_voltage_dc"] = ":MEAS:VOLT:DC:TEST?",
+            ["configure_voltage_dc"] = ":CONF:VOLT:DC {range}",
+            ["read"] = ":FETC{channel}?"
+            },
+        },
+        new DialectProfile
+        {
+            Id = "ci_psu_dialect_wins",
+            Kind = InstrumentKind.DcPowerSupply,
+            ManufacturerGlob = "TestDialect*",
+            ModelGlob = "*",
+            Channels = 1,
+            Commands = new Dictionary<string, string>
+            {
+            ["set_voltage"] = ":VOLT {volts},(@{channel})"
+            },
+        },
+        new DialectProfile
+        {
             Id = "generic_dmm",
             Kind = InstrumentKind.Dmm,
             ManufacturerGlob = "*",
@@ -150,7 +176,7 @@ public static class DialectRegistry
             ["reset_totalize"] = ":COUNter:CRESet",
             ["read_totalize"] = ":COUNter:DATA?",
             ["gate_time"] = ":SENSe:FREQuency:APERture {seconds}",
-            ["channel_select"] = ":SENSe:FUNCtion:ON \\\"FREQ {channel}\\\""
+            ["channel_select"] = ":SENSe:FUNCtion:ON \"FREQ {channel}\""
             },
         },
         new DialectProfile

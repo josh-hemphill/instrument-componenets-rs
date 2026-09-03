@@ -14,6 +14,26 @@ pub struct DialectProfile {
 
 pub static DIALECT_PROFILES: &[DialectProfile] = &[
     DialectProfile {
+        id: "ci_dmm_dialect_wins",
+        kind: InstrumentKind::Dmm,
+        manufacturer_glob: "TestDialect*",
+        model_glob: "*",
+        channels: 1,
+        commands: &[
+            ("measure_voltage_dc", ":MEAS:VOLT:DC:TEST?"),
+            ("configure_voltage_dc", ":CONF:VOLT:DC {range}"),
+            ("read", ":FETC{channel}?"),
+        ],
+    },
+    DialectProfile {
+        id: "ci_psu_dialect_wins",
+        kind: InstrumentKind::DcPowerSupply,
+        manufacturer_glob: "TestDialect*",
+        model_glob: "*",
+        channels: 1,
+        commands: &[("set_voltage", ":VOLT {volts},(@{channel})")],
+    },
+    DialectProfile {
         id: "generic_dmm",
         kind: InstrumentKind::Dmm,
         manufacturer_glob: "*",
@@ -125,10 +145,7 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
             ("reset_totalize", ":COUNter:CRESet"),
             ("read_totalize", ":COUNter:DATA?"),
             ("gate_time", ":SENSe:FREQuency:APERture {seconds}"),
-            (
-                "channel_select",
-                ":SENSe:FUNCtion:ON \\\"FREQ {channel}\\\"",
-            ),
+            ("channel_select", ":SENSe:FUNCtion:ON \"FREQ {channel}\""),
         ],
     },
     DialectProfile {

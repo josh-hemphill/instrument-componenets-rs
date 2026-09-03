@@ -1,6 +1,6 @@
 # Roadmap
 
-Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A–D are merged (`latest`). Remaining work is session I/O honesty, dialect emission for the rest of the catalog, DMM/PSU transcripts, and self-hosted hardware smoke.
+Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A–E are merged (`latest`). Stream F (this work) emits dialect-resolved SCPI for the remaining catalog classes. Next: DMM/PSU transcripts and self-hosted hardware smoke.
 
 **Still deferred:** package publishing (`0.2.0`), UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance, vendor VISA on GitHub-hosted CI.
 

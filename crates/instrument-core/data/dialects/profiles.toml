@@ -4,6 +4,31 @@
 # Matching: first profile whose kind matches and manufacturer/model globs match IDN
 # (case-insensitive; `*` wildcard). Profiles are ordered; put specific dialects
 # before catch-all `generic_*` entries.
+#
+# `ci_*_dialect_wins` rows are CI fixtures (fake IDN `TestDialect*`), not hardware
+# vendors. Stream G adds real DMM/PSU vendor profiles.
+
+[[profile]]
+id = "ci_dmm_dialect_wins"
+kind = "Dmm"
+manufacturer_glob = "TestDialect*"
+model_glob = "*"
+channels = 1
+
+[profile.commands]
+measure_voltage_dc = ":MEAS:VOLT:DC:TEST?"
+configure_voltage_dc = ":CONF:VOLT:DC {range}"
+read = ":FETC{channel}?"
+
+[[profile]]
+id = "ci_psu_dialect_wins"
+kind = "DcPowerSupply"
+manufacturer_glob = "TestDialect*"
+model_glob = "*"
+channels = 1
+
+[profile.commands]
+set_voltage = ":VOLT {volts},(@{channel})"
 
 [[profile]]
 id = "generic_dmm"

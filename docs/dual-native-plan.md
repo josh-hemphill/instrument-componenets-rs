@@ -6,9 +6,9 @@ JSON contracts, SCPI fixtures, and CI gates. They do **not** share a runtime.
 This is the working plan for remaining work after Streams A–D. Update this file
 when a decision changes.
 
-## Current state (after A–D)
+## Current state (after A–E)
 
-Merged into `latest` as PRs #5–#8:
+Merged into `latest` as PRs #5–#8 and #10. Stream F is this branch.
 
 | Stream | PR | What landed |
 |--------|----|-------------|
@@ -16,26 +16,14 @@ Merged into `latest` as PRs #5–#8:
 | B | #6 | Session honesty: catalogs inherit `ConnectOptions`, `IoTimeout()`, reconnect diagnostics only on success, C# culture-invariant SCPI, ProbeSystErr, ResetOnConnect, SharedLock fail-closed, VISA dispose |
 | C | #7 | `spec/` JSON contracts, dialect-resolved SCPI for PowerMeter + SpectrumAnalyzer only, vendor profiles before `generic_*` |
 | D | #8 | C# examples, multi-session test, dual-native docs, Counter timeout + scope binary waveform **deferred** |
+| E | #10 | Query retry+flush, honest OPC/ERR probes, Ok(0) fail-closed, framed reads do not reconnect before flush, Rust async Drop restore |
 
-Session I/O is still incomplete:
-
-- Queries do **not** retry reads. `retries` only re-issues idempotent **writes**.
-  A timed-out query leaves the response in the instrument; the next command can
-  parse a stale value.
-- `ProbeOpc` / `ProbeSystErr` treat any successful string as “supported” and
-  cache it. An instrument that answers `*OPC?` with
-  `-113,"Undefined header"` is treated as OPC-capable; `WaitComplete` then
-  skips the real wait.
-- `Ok(0)` on a framed read spins (1 ms sleep loop) instead of failing closed.
-- Rust async timeout restore lives after `.await`. Cancel/drop of that future
-  skips restore. C# `finally` already covers this.
-- `reconnect_on_failure` defaults **true** but VISA `Reconnect()` is
-  unsupported. Failure recovery is write-retry only until a reconnectable
-  transport exists.
-
-Dialect emission is PowerMeter + SpectrumAnalyzer only. DMM, PSU, function
-generator, oscilloscope, switch, and counter still emit `scpi_commands` /
-`ScpiCommands` templates.
+Dialect emission: PowerMeter and SpectrumAnalyzer **require** dialect keys.
+DMM, PSU, function generator, oscilloscope, switch, and counter use
+`dialect_io::try_command` / `try_formatted` and C# `DialectCommand.Try`
+(dialect first, `scpi_commands` / `ScpiCommands` fallback). Command ids live
+in `crates/instrument-core/data/dialects/profiles.toml` and
+`scpi_commands.toml` (not `spec/commands.json`).
 
 No hardware evidence. `crates/instrument/tests/hardware.rs` is `#[ignore]`.
 GitHub-hosted CI uses MockTransport + transcripts. That is the correct CI
@@ -80,17 +68,14 @@ VISA. Do not confuse the two.
 ## Roadmap (remaining)
 
 ```text
-latest
-  └─ E  session I/O honesty     query retry+flush, honest OPC/ERR probes,
-                                Ok(0) fail-closed, Rust async Drop restore
-       └─ F  dialect for remaining classes
-            DMM, PSU, FGen, oscilloscope, switch, counter
-            └─ G  DMM + PSU transcripts + 1–2 vendor profiles
-                 └─ H  self-hosted hardware smoke (not GitHub-hosted)
+latest  (includes E as #10)
+  └─ F  dialect for remaining classes
+        DMM, PSU, FGen, oscilloscope, switch, counter
+        └─ G  DMM + PSU transcripts + 1–2 vendor profiles
+             └─ H  self-hosted hardware smoke (not GitHub-hosted)
 ```
 
-Do not start F until E is merged. Do not start G until F is merged. H is
-self-hosted and does not block F/G.
+Do not start G until F is merged. H is self-hosted and does not block F/G.
 
 ---
 
@@ -241,29 +226,39 @@ Use MockTransport scripts + `fail_reads`. Mirror C# tests in
 
 ## Stream F — Dialect emission for remaining classes
 
-**Goal:** Every catalog class emits dialect-resolved SCPI the same way
-PowerMeter and SpectrumAnalyzer already do (`try_dialect_command` /
-`TryDialectCommand`).
+**Goal:** Every catalog class emits dialect-resolved SCPI. PowerMeter and
+SpectrumAnalyzer still **require** dialect keys. Remaining classes try the
+session dialect first and fall back to `scpi_commands` / `ScpiCommands`.
 
 **Classes:** DMM, PSU, function generator, oscilloscope, switch, counter.
 
 **Approach:**
 
-1. Reuse `crates/instrument/src/classes/dialect_io.rs` (already extracted for
-   PM/SA). Extend only if a class needs a new helper (e.g. binary block read).
-2. For each method that today formats `self.scpi.<field>`, resolve
-   `spec/commands.json` id + args through the session dialect first; fall back
-   to `scpi_commands` / `ScpiCommands` when the dialect has no template.
-3. Keep C# in lockstep (`TryDialectCommand` on `ScpiSession`).
-4. Oscilloscope **binary waveform** (`#N` IEEE block) stays **deferred** unless
-   F’s remaining work is done and a fixture exists. Framing already lives in
-   `extract_response`; the typed `read_waveform` API is unused. Do not invent
-   a binary API in F without a golden fixture.
+1. Reuse `crates/instrument/src/classes/dialect_io.rs` (`try_command`,
+   `try_formatted`). Missing key → fallback. Leftover `{ident}` placeholders
+   → fallback (including no-arg `try_command`, so Rust cannot emit braces
+   that C# would reject). Extra supplied vars that the template does not
+   mention are ignored when the template has placeholders (vendor `{range}`
+   still runs if `{resolution}` is also passed). A constant template cannot
+   represent any supplied var, so those calls fall back (ranged DMM measure
+   keeps the range).
+2. Command ids are dialect keys in `profiles.toml` plus fallback templates in
+   `scpi_commands.toml` / generated `ScpiCommands`. There is no
+   `spec/commands.json`.
+3. C# lockstep: `DialectCommand.Try` in
+   `dotnet/src/InstrumentComponents/Classes/DialectCommand.cs`.
+4. Oscilloscope **binary waveform** (`#N` IEEE block) stays **deferred**. ASCII
+   capture remains the supported path.
 
-**Tests:** MockTransport scripts per class covering at least one dialect-resolved
-command and the generic fallback. Shared command ids from `spec/commands.json`.
+**Tests:** MockTransport scripts covering dialect-resolved commands plus
+explicit fallback: DMM measure with range (`:MEAS:VOLT:DC? 10`), FGen
+`read_frequency` (`:SOUR:FREQ?`), scope `read_timebase_scale`
+(`:TIMebase:SCALe?`). CI fixture profiles `ci_dmm_dialect_wins` /
+`ci_psu_dialect_wins` (IDN `TestDialect*`) prove a non-generic profile is
+selected and emits different SCPI, leftover `{channel}` on `read` falls back,
+and extra optional configure args do not drop `{range}`.
 
-**Does not:** Add vendor profiles (G). Expand the class registry. Scope binary.
+**Does not:** Add hardware vendor profiles (G). Expand the class registry. Scope binary.
 
 ---
 
