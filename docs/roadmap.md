@@ -4,6 +4,8 @@ Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A�
 
 **Still deferred:** package publishing (`0.2.0`), UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance, vendor VISA on GitHub-hosted CI.
 
+**Parallel (C# only, does not block F–H):** optional OpenTAP pack + session injection for HardwareTest — see [opentap-consumer.md](opentap-consumer.md).
+
 Neither NI nor Keysight ships a CI-loadable VISA/instrument emulator. GitHub-hosted CI stays on MockTransport + transcripts. See [Hardware emulators](dual-native-plan.md#hardware-emulators-ni--keysight).
 
 ```mermaid

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Contributor contract for HardwareTest / OpenTAP consumption (`docs/opentap-consumer.md`): session injection, optional pack rules, and explicit non-goals
+
 ### Fixed
 
 - Queries retry the write+read pair after a timed-out read, flushing stale data first

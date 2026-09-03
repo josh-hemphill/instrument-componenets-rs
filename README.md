@@ -150,6 +150,7 @@ Published site (MkDocs): [https://josh-hemphill.github.io/instrument-components/
 - [Dual-native plan](docs/dual-native-plan.md) — CI, session honesty, shared contracts
 - [Parity checklist](docs/parity-checklist.md) — Rust ↔ C# scenario matrix
 - [.NET getting started](docs/dotnet-getting-started.md) — C# quick start (first-class, not a port afterthought)
+- [OpenTAP / HardwareTest consumer](docs/opentap-consumer.md) — session injection and optional pack for the operator UI shell
 - [Contributing](CONTRIBUTING.md)
 
 API reference on [docs.rs](https://docs.rs/instrument-components) (after first publish). Local docs site: `docs-site/` (`pip install -r requirements.txt && mkdocs serve`).
