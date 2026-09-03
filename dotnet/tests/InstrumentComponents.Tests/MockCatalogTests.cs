@@ -122,4 +122,60 @@ public class MockCatalogTests
         _ = dev.OpenDmm();
         _ = dev.OpenDcPowerSupply();
     }
+
+    [Fact]
+    public void FixtureDmmMeasureWithRangeFallsBack()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Keysight Technologies", "34461A", "SN1", "1.0")
+            .Kinds(InstrumentKind.Dmm)
+            .OnQuery(":MEAS:VOLT:DC? 10", "1.234")
+            .Build();
+
+        var catalog = DeviceCatalog.FromFixture("mock://dmm-range", fixture);
+        var dmm = catalog.OpenDmm("mock://dmm-range");
+        Assert.Equal(1.234, dmm.MeasureVoltageDc(10), precision: 9);
+    }
+
+    [Fact]
+    public async Task AsyncFixtureDmmMeasureWithRangeFallsBack()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Keysight Technologies", "34461A", "SN1", "1.0")
+            .Kinds(InstrumentKind.Dmm)
+            .OnQuery(":MEAS:VOLT:DC? 10", "1.234")
+            .Build();
+
+        var catalog = DeviceCatalog.FromFixture("mock://dmm-range", fixture);
+        var dmm = await catalog.Device("mock://dmm-range").OpenDmmAsync();
+        Assert.Equal(1.234, await dmm.MeasureVoltageDcAsync(10));
+    }
+
+    [Fact]
+    public void FixtureFgenReadFrequencyFallsBack()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Keysight Technologies", "33522B", "SN1", "1.0")
+            .Kinds(InstrumentKind.FunctionGenerator)
+            .OnQuery(":SOUR:FREQ?", "1000.0")
+            .Build();
+
+        var catalog = DeviceCatalog.FromFixture("mock://fgen-freq", fixture);
+        var fgen = catalog.OpenFunctionGenerator("mock://fgen-freq");
+        Assert.Equal(1000.0, fgen.ReadFrequency(), precision: 9);
+    }
+
+    [Fact]
+    public void FixtureScopeReadTimebaseFallsBack()
+    {
+        var fixture = ScriptedFixture.Builder()
+            .Idn("Rigol Technologies", "DS1054Z", "SN1", "1.0")
+            .Kinds(InstrumentKind.Oscilloscope)
+            .OnQuery(":TIMebase:SCALe?", "0.001")
+            .Build();
+
+        var catalog = DeviceCatalog.FromFixture("mock://scope-tb", fixture);
+        var scope = catalog.OpenOscilloscope("mock://scope-tb");
+        Assert.Equal(0.001, scope.ReadTimebaseScale(), precision: 12);
+    }
 }

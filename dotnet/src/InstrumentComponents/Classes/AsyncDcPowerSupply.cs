@@ -13,51 +13,71 @@ public sealed class AsyncDcPowerSupply
 
     public AsyncInstrumentSession Session => _session;
 
-    public uint ChannelCount =>
-        Math.Max(1, DialectRegistry.Resolve(
-            InstrumentKind.DcPowerSupply,
-            _session.Identity.Manufacturer,
-            _session.Identity.Model).Channels);
+    private DialectProfile Dialect => _session.DialectFor(InstrumentKind.DcPowerSupply);
+
+    private string Cmd(string key, string fallback, params (string Name, string Value)[] vars) =>
+        DialectCommand.Try(Dialect, key, fallback, vars);
+
+    public uint ChannelCount => Math.Max(1, Dialect.Channels);
 
     public Task SetVoltageAsync(uint channel, double volts, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PsuSetVoltage(channel, volts), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("set_voltage", ScpiCommands.PsuSetVoltage(channel, volts),
+            ("channel", channel.ToString()), ("volts", ScpiFormat.Double(volts))), cancellationToken);
 
     public Task SetCurrentLimitAsync(uint channel, double amps, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PsuSetCurrentLimit(channel, amps), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("set_current_limit", ScpiCommands.PsuSetCurrentLimit(channel, amps),
+            ("channel", channel.ToString()), ("amps", ScpiFormat.Double(amps))), cancellationToken);
 
-    public Task OutputEnableAsync(uint channel, bool enabled, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PsuOutputEnable(channel, enabled), cancellationToken);
+    public Task OutputEnableAsync(uint channel, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var state = enabled ? "ON" : "OFF";
+        return _session.Scpi.WriteAsync(Cmd("output_enable", ScpiCommands.PsuOutputEnable(channel, enabled),
+            ("channel", channel.ToString()), ("state", state)), cancellationToken);
+    }
 
     public async Task<bool> OutputStateQueryAsync(uint channel, CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.PsuOutputStateQuery(channel), cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(Cmd("output_state_query", ScpiCommands.PsuOutputStateQuery(channel),
+            ("channel", channel.ToString())), cancellationToken).ConfigureAwait(false);
         return DcPowerSupply.ParseOnOff(resp);
     }
 
     public Task OvpLevelAsync(uint channel, double volts, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PsuOvpLevel(channel, volts), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("ovp_level", ScpiCommands.PsuOvpLevel(channel, volts),
+            ("channel", channel.ToString()), ("volts", ScpiFormat.Double(volts))), cancellationToken);
 
-    public Task OvpEnableAsync(uint channel, bool enabled, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PsuOvpEnable(channel, enabled ? "ON" : "OFF"), cancellationToken);
+    public Task OvpEnableAsync(uint channel, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var state = enabled ? "ON" : "OFF";
+        return _session.Scpi.WriteAsync(Cmd("ovp_enable", ScpiCommands.PsuOvpEnable(channel, state),
+            ("channel", channel.ToString()), ("state", state)), cancellationToken);
+    }
 
     public async Task<bool> OvpQueryAsync(uint channel, CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.PsuOvpQuery(channel), cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(Cmd("ovp_query", ScpiCommands.PsuOvpQuery(channel),
+            ("channel", channel.ToString())), cancellationToken).ConfigureAwait(false);
         return DcPowerSupply.ParseOnOff(resp);
     }
 
-    public Task SenseEnableAsync(uint channel, bool enabled, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.PsuSenseEnable(channel, enabled ? "ON" : "OFF"), cancellationToken);
+    public Task SenseEnableAsync(uint channel, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var state = enabled ? "ON" : "OFF";
+        return _session.Scpi.WriteAsync(Cmd("sense_enable", ScpiCommands.PsuSenseEnable(channel, state),
+            ("channel", channel.ToString()), ("state", state)), cancellationToken);
+    }
 
     public async Task<double> ReadVoltageAsync(uint channel, CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.PsuReadVoltage(channel), cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(Cmd("read_voltage", ScpiCommands.PsuReadVoltage(channel),
+            ("channel", channel.ToString())), cancellationToken).ConfigureAwait(false);
         return ScpiSession.ParseF64(resp);
     }
 
     public async Task<double> ReadCurrentAsync(uint channel, CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.PsuReadCurrent(channel), cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(Cmd("read_current", ScpiCommands.PsuReadCurrent(channel),
+            ("channel", channel.ToString())), cancellationToken).ConfigureAwait(false);
         return ScpiSession.ParseF64(resp);
     }
 }

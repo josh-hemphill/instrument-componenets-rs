@@ -1,3 +1,5 @@
+using InstrumentComponents.Dialects;
+using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
 
@@ -11,23 +13,30 @@ public sealed class AsyncCounter
 
     public AsyncInstrumentSession Session => _session;
 
+    private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Counter);
+
+    private string Cmd(string key, string fallback, params (string Name, string Value)[] vars) =>
+        DialectCommand.Try(Dialect, key, fallback, vars);
+
     public Task<double> MeasureFrequencyAsync(CancellationToken cancellationToken = default) =>
-        QueryF64Async(ScpiCommands.CounterMeasureFrequency, cancellationToken);
+        QueryF64Async(Cmd("measure_frequency", ScpiCommands.CounterMeasureFrequency), cancellationToken);
 
     public Task<double> MeasurePeriodAsync(CancellationToken cancellationToken = default) =>
-        QueryF64Async(ScpiCommands.CounterMeasurePeriod, cancellationToken);
+        QueryF64Async(Cmd("measure_period", ScpiCommands.CounterMeasurePeriod), cancellationToken);
 
     public Task SetGateTimeAsync(double seconds, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.CounterGateTime(seconds), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("gate_time", ScpiCommands.CounterGateTime(seconds),
+            ("seconds", ScpiFormat.Double(seconds))), cancellationToken);
 
     public Task SelectChannelAsync(uint channel, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.CounterChannelSelect(channel), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("channel_select", ScpiCommands.CounterChannelSelect(channel),
+            ("channel", channel.ToString())), cancellationToken);
 
     public Task ResetTotalizeAsync(CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.CounterResetTotalize, cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("reset_totalize", ScpiCommands.CounterResetTotalize), cancellationToken);
 
     public Task<double> ReadTotalizeAsync(CancellationToken cancellationToken = default) =>
-        QueryF64Async(ScpiCommands.CounterReadTotalize, cancellationToken);
+        QueryF64Async(Cmd("read_totalize", ScpiCommands.CounterReadTotalize), cancellationToken);
 
     private async Task<double> QueryF64Async(string cmd, CancellationToken cancellationToken)
     {

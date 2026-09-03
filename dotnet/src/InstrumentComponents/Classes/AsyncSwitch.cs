@@ -1,3 +1,5 @@
+using InstrumentComponents.Dialects;
+using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 
 namespace InstrumentComponents.Classes;
@@ -15,20 +17,28 @@ public sealed class AsyncSwitch
 
     public AsyncInstrumentSession Session => _session;
 
+    private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Switch);
+
+    private string Cmd(string key, string fallback, params (string Name, string Value)[] vars) =>
+        DialectCommand.Try(Dialect, key, fallback, vars);
+
     public static string PathLabel(uint ch1, uint ch2) => Switch.PathLabel(ch1, ch2);
 
     public Task CloseRouteAsync(uint ch1, uint ch2, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.SwitchCloseRoute(ch1, ch2), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("close_route", ScpiCommands.SwitchCloseRoute(ch1, ch2),
+            ("ch1", ch1.ToString()), ("ch2", ch2.ToString())), cancellationToken);
 
     public Task OpenRouteAsync(uint ch1, uint ch2, CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.SwitchOpenRoute(ch1, ch2), cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("open_route", ScpiCommands.SwitchOpenRoute(ch1, ch2),
+            ("ch1", ch1.ToString()), ("ch2", ch2.ToString())), cancellationToken);
 
     public async Task<bool> IsClosedAsync(uint ch1, uint ch2, CancellationToken cancellationToken = default)
     {
-        var resp = await _session.Scpi.QueryAsync(ScpiCommands.SwitchIsClosed(ch1, ch2), cancellationToken).ConfigureAwait(false);
+        var resp = await _session.Scpi.QueryAsync(Cmd("is_closed", ScpiCommands.SwitchIsClosed(ch1, ch2),
+            ("ch1", ch1.ToString()), ("ch2", ch2.ToString())), cancellationToken).ConfigureAwait(false);
         return Switch.ParseClosed(resp);
     }
 
     public Task OpenAllAsync(CancellationToken cancellationToken = default) =>
-        _session.Scpi.WriteAsync(ScpiCommands.SwitchOpenAll, cancellationToken);
+        _session.Scpi.WriteAsync(Cmd("open_all", ScpiCommands.SwitchOpenAll), cancellationToken);
 }

@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Remaining catalog classes (DMM, PSU, FGen, oscilloscope, switch, counter) emit dialect-resolved SCPI, falling back to `scpi_commands` / `ScpiCommands` when the profile has no usable template
 - Spectrum analyzer and power meter classes emit SCPI from the resolved dialect profile (Rigol DSA `:TRAC?` vs generic `:TRAC:DATA?`)
 - Vendor dialect profiles are matched before catch-all `generic_*` rows; glob patterns like `*U20*` match a substring
 - C# `InstrumentComponents.Visa` targets `net8.0` (Linux-capable builds via `IviFoundation.Visa`; runtime still needs a vendor VISA install)
