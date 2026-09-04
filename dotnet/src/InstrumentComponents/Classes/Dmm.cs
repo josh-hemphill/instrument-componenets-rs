@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -6,13 +7,22 @@ using InstrumentComponents.Scpi;
 namespace InstrumentComponents.Classes;
 
 /// <summary>Digital multimeter session view (IVI-inspired / SCPI :MEASure).</summary>
-public sealed class Dmm
+public sealed class Dmm : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public Dmm(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    /// <summary>DMMs have no output stage; safe-shutdown is a no-op.</summary>
+    public void OutputOff()
+    {
+    }
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Dmm);
 

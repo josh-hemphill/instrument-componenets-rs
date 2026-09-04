@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -30,13 +31,19 @@ public static class WaveformExtensions
 }
 
 /// <summary>Function / arbitrary waveform generator session view.</summary>
-public sealed class FunctionGenerator
+public sealed class FunctionGenerator : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public FunctionGenerator(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    public void OutputOff() => OutputEnable(false);
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.FunctionGenerator);
 

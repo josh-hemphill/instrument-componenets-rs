@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -12,6 +13,15 @@ public sealed class AsyncOscilloscope
     public AsyncOscilloscope(AsyncInstrumentSession session) => _session = session;
 
     public AsyncInstrumentSession Session => _session;
+
+    public Task<Idn> QueryIdnAsync(CancellationToken cancellationToken = default) =>
+        _session.IdnAsync(cancellationToken);
+
+    public Task ResetAsync(CancellationToken cancellationToken = default) =>
+        _session.ResetAsync(cancellationToken);
+
+    public Task OutputOffAsync(CancellationToken cancellationToken = default) =>
+        StopAsync(cancellationToken);
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Oscilloscope);
 

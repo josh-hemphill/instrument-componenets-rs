@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -6,13 +7,24 @@ using InstrumentComponents.Scpi;
 namespace InstrumentComponents.Classes;
 
 /// <summary>DC power supply session view.</summary>
-public sealed class DcPowerSupply
+public sealed class DcPowerSupply : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public DcPowerSupply(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    public void OutputOff()
+    {
+        var count = ChannelCount;
+        for (var channel = 1u; channel <= count; channel++)
+            OutputEnable(channel, false);
+    }
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.DcPowerSupply);
 

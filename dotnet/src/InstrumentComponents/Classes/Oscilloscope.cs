@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -6,13 +7,19 @@ using InstrumentComponents.Scpi;
 namespace InstrumentComponents.Classes;
 
 /// <summary>Oscilloscope session view (IVI-inspired / SCPI :TIMebase, :CHANnel, :WAVeform).</summary>
-public sealed class Oscilloscope
+public sealed class Oscilloscope : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public Oscilloscope(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    public void OutputOff() => Stop();
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Oscilloscope);
 

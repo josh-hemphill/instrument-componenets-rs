@@ -1,5 +1,6 @@
 using InstrumentComponents.Dialects;
 using InstrumentComponents.Errors;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -23,13 +24,22 @@ public static class PowerUnitExtensions
 }
 
 /// <summary>RF / microwave power meter session view.</summary>
-public sealed class PowerMeter
+public sealed class PowerMeter : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public PowerMeter(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    /// <summary>Power meters have no output stage; safe-shutdown is a no-op.</summary>
+    public void OutputOff()
+    {
+    }
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.PowerMeter);
 

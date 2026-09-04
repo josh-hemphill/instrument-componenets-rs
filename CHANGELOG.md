@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Contributor contract for HardwareTest / OpenTAP consumption (`docs/opentap-consumer.md`): session injection, OpenTAP pack with all eight instrument types, and explicit non-goals
 - C# `IScpiIo` message session plus `InstrumentSession.FromIo` so a host can inject Write/Query without wrapping VISA as `ITransport`
+- `QueryIdn` / `OutputOff` / `Reset` on all eight typed classes (`IInstrumentIdentity`, `IInstrumentShutdown`)
 
 ### Changed
 
