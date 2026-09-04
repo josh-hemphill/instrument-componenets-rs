@@ -60,17 +60,21 @@ fn counter_53230a_measure_frequency() {
 
 #[test]
 fn dmm_dmm6500_measure_voltage_dc() {
-    let session = session_from_fixture("dmm_dmm6500.json", "Keithley Instruments", "DMM6500");
+    // Live *IDN? often reports model "MODEL DMM6500", not exact "DMM6500".
+    let session = session_from_fixture("dmm_dmm6500.json", "Keithley Instruments", "MODEL DMM6500");
     let mut dmm = Dmm::new(session);
     let dialect_volts = dmm.measure_voltage_dc(None).unwrap();
     assert!((dialect_volts - 1.2345).abs() < 1e-9);
+    // Ranged measure cannot fill the constant vendor template, so this is
+    // generic :MEAS:VOLT:DC? 10 — not complete DMM6500 SCPI.
     let ranged_volts = dmm.measure_voltage_dc(Some(10.0)).unwrap();
     assert!((ranged_volts - 10.001).abs() < 1e-9);
 }
 
 #[test]
 fn psu_n6705c_set_and_read_voltage() {
-    let session = session_from_fixture("psu_n6705c.json", "Keysight Technologies", "N6705C");
+    // N6705 units often IDN as Agilent Technologies, not Keysight.
+    let session = session_from_fixture("psu_n6705c.json", "Agilent Technologies", "N6705C");
     let mut psu = DcPowerSupply::new(session);
     assert_eq!(psu.channel_count(), 4);
     psu.set_voltage(1, 3.3).unwrap();
