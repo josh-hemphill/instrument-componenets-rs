@@ -2,9 +2,10 @@
   "$schema": "../vendors.schema.json",
   "id": "keysight_n6705c",
   "kind": "DcPowerSupply",
-  "manufacturerGlob": "Keysight*",
+  "manufacturerGlob": "*",
   "modelGlob": "N6705*",
   "channels": 4,
+  "notes": "N6705 IDN is Keysight or Agilent. sense_enable is omitted: N6700 remote sense is INT/EXT, not ON/OFF, so sense stays on generic :OUTP{channel}:SENS {state}.",
   "commands": {
     "set_voltage": ":VOLT {volts}, (@{channel})",
     "set_current_limit": ":CURR {amps}, (@{channel})",

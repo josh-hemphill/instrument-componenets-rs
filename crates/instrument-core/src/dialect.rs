@@ -97,7 +97,7 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
         id: "keithley_dmm6500",
         kind: InstrumentKind::Dmm,
         manufacturer_glob: "Keithley*",
-        model_glob: "DMM6500",
+        model_glob: "*DMM6500*",
         channels: 1,
         commands: &[
             ("measure_voltage_dc", ":SENS:FUNC \"VOLT:DC\";:READ?"),
@@ -112,7 +112,7 @@ pub static DIALECT_PROFILES: &[DialectProfile] = &[
     DialectProfile {
         id: "keysight_n6705c",
         kind: InstrumentKind::DcPowerSupply,
-        manufacturer_glob: "Keysight*",
+        manufacturer_glob: "*",
         model_glob: "N6705*",
         channels: 4,
         commands: &[

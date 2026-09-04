@@ -24,6 +24,7 @@
     "manufacturerGlob": { "type": "string", "minLength": 1 },
     "modelGlob": { "type": "string", "minLength": 1 },
     "channels": { "type": "integer", "minimum": 1 },
+    "notes": { "type": "string", "minLength": 1 },
     "commands": {
       "type": "object",
       "minProperties": 1,

@@ -17,6 +17,7 @@ These files are the executable contract between the Rust and C# implementations.
 2. New typed-class methods that emit SCPI need a row in `scpi-vectors.json` (or a shared transcript that asserts the value).
 3. Transcripts under `fixtures/` must drive a typed-class action and assert **values**, not only step counts.
 4. Do not attach new vendor globs to models used as generic in mock catalog (`34461A`, `E36312A`).
+5. `tools/gen-dialects.ts` rejects vendor JSON that does not match `vendors.schema.json` (id pattern, extra properties, empty commands). Optional `notes` are documentation only and are not generated into dialect tables.
 
 ```bash
 deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-shared-tables.ts
