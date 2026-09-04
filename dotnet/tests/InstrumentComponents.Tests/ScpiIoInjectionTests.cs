@@ -86,6 +86,27 @@ public class ScpiIoInjectionTests
     }
 
     [Fact]
+    public void FromIoOwnsIoFalseLeavesHostSessionAlive()
+    {
+        var io = new ScriptedIo(("*IDN?", "Acme,DMM1,SN,1.0"));
+        var first = InstrumentSession.FromIo(
+            ResourceAddress.Parse("mock://dmm"),
+            io,
+            new DeviceIdentity(),
+            ownsIo: false);
+        var second = InstrumentSession.FromIo(
+            ResourceAddress.Parse("mock://dmm"),
+            io,
+            new DeviceIdentity(),
+            ownsIo: false);
+        first.Dispose();
+        Assert.False(io.Disposed);
+        Assert.Equal("Acme", second.Idn().Manufacturer);
+        second.Dispose();
+        Assert.False(io.Disposed);
+    }
+
+    [Fact]
     public void InjectedSessionHasNoByteTransport()
     {
         var session = InstrumentSession.FromIo(

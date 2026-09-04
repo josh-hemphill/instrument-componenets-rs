@@ -53,6 +53,14 @@ public class StepPublishTests
         Assert.Equal(Verdict.Fail, run.Verdict);
     }
 
+    [Fact]
+    public void SafeShutdownWithoutInstrumentIsError()
+    {
+        var step = new SafeShutdownStep { Instrument = null! };
+        step.Run();
+        Assert.Equal(Verdict.Error, step.Verdict);
+    }
+
     private sealed class CollectingListener : ResultListener
     {
         public List<(string Name, IReadOnlyList<string> ColumnNames)> Tables { get; } = [];

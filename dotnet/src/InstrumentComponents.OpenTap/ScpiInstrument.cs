@@ -1,7 +1,10 @@
 using InstrumentComponents.Address;
 using InstrumentComponents.Classes;
+using InstrumentComponents.Classifier;
 using InstrumentComponents.Errors;
 using InstrumentComponents.Identity;
+using InstrumentComponents.Kind;
+using InstrumentComponents.Registry;
 using InstrumentComponents.Scpi;
 using InstrumentComponents.Session;
 using OpenTap;
@@ -18,6 +21,7 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     private IScpiIo? _attached;
     private InstrumentSession? _session;
     private readonly DeviceIdentity _identity = new();
+    private IReadOnlyList<InstrumentKind> _supportedKinds = [];
 
     protected ScpiInstrument()
     {
@@ -28,6 +32,7 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
         _attached = io ?? throw new ArgumentNullException(nameof(io));
     }
 
+    [VisaAddress]
     [Display("Visa Address", Group: "Communication", Order: 1)]
     public string VisaAddress { get; set; } = string.Empty;
 
@@ -50,8 +55,18 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
                 "No SCPI session attached. The host must call AttachSession (or the IScpiIo constructor) before Open. This pack does not open a vendor VISA resource manager.");
         }
 
+        if (IsConnected && _session is not null)
+            return;
+
+        _session?.Dispose();
+        _session = null;
+        _supportedKinds = [];
         _attached.IoTimeout = TimeSpan.FromMilliseconds(ClampTimeout());
-        _session = InstrumentSession.FromIo(ParseOrFallback(VisaAddress), _attached, _identity);
+        _session = InstrumentSession.FromIo(
+            ParseOrFallback(VisaAddress),
+            _attached,
+            _identity,
+            ownsIo: false);
         try
         {
             var idn = _session.Idn();
@@ -60,10 +75,14 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
             _identity.Serial = idn.Serial;
             _identity.Firmware = idn.Firmware;
             IdentityFields.CopyFrom(idn);
+            RefreshSupportedKinds(idn);
         }
-        catch (Exception ex)
+        catch
         {
-            Log.Warning("Could not query *IDN? for {0}: {1}", Name, ex.Message);
+            _session.Dispose();
+            _session = null;
+            _supportedKinds = [];
+            throw;
         }
 
         base.Open();
@@ -73,8 +92,8 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     {
         var session = _session;
         _session = null;
+        _supportedKinds = [];
         session?.Dispose();
-        _attached = null;
         base.Close();
     }
 
@@ -84,21 +103,41 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
 
     public abstract void OutputOff();
 
-    public Dmm AsDmm() => new(RequireSession());
+    public Dmm AsDmm() => View(InstrumentKind.Dmm, session => new Dmm(session));
 
-    public DcPowerSupply AsDcPowerSupply() => new(RequireSession());
+    public DcPowerSupply AsDcPowerSupply() =>
+        View(InstrumentKind.DcPowerSupply, session => new DcPowerSupply(session));
 
-    public FunctionGenerator AsFunctionGenerator() => new(RequireSession());
+    public FunctionGenerator AsFunctionGenerator() =>
+        View(InstrumentKind.FunctionGenerator, session => new FunctionGenerator(session));
 
-    public Oscilloscope AsOscilloscope() => new(RequireSession());
+    public Oscilloscope AsOscilloscope() =>
+        View(InstrumentKind.Oscilloscope, session => new Oscilloscope(session));
 
-    public Switch AsSwitch() => new(RequireSession());
+    public Switch AsSwitch() => View(InstrumentKind.Switch, session => new Switch(session));
 
-    public Counter AsCounter() => new(RequireSession());
+    public Counter AsCounter() => View(InstrumentKind.Counter, session => new Counter(session));
 
-    public PowerMeter AsPowerMeter() => new(RequireSession());
+    public PowerMeter AsPowerMeter() =>
+        View(InstrumentKind.PowerMeter, session => new PowerMeter(session));
 
-    public SpectrumAnalyzer AsSpectrumAnalyzer() => new(RequireSession());
+    public SpectrumAnalyzer AsSpectrumAnalyzer() =>
+        View(InstrumentKind.SpectrumAnalyzer, session => new SpectrumAnalyzer(session));
+
+    private T View<T>(InstrumentKind kind, Func<InstrumentSession, T> factory)
+    {
+        var session = RequireSession();
+        var known = _supportedKinds.Where(k => k != InstrumentKind.Unknown).Distinct().ToList();
+        if (known.Count > 0)
+            SessionHelpers.EnsureKindSupported(session.Address, kind, known);
+        return factory(session);
+    }
+
+    private void RefreshSupportedKinds(Idn idn)
+    {
+        var (_, classified) = Classifier.Classifier.ClassifyFromIdentity(idn, ModelRegistry.Embedded());
+        _supportedKinds = classified.Select(k => k.Kind).Distinct().ToList();
+    }
 
     protected InstrumentSession RequireSession() =>
         _session ?? throw new InvalidOperationException($"{GetType().Name} is not open.");

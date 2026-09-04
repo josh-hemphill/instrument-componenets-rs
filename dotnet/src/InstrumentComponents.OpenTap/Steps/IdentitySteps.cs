@@ -34,7 +34,8 @@ public sealed class SafeShutdownStep : TestStep
     {
         if (Instrument is null)
         {
-            UpgradeVerdict(Verdict.Pass);
+            UpgradeVerdict(Verdict.Error);
+            Log.Error("No instrument assigned.");
             return;
         }
 
