@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Contributor contract for HardwareTest / OpenTAP consumption (`docs/opentap-consumer.md`): session injection, OpenTAP pack with all eight instrument types, and explicit non-goals
+
+### Changed
+
+- Roadmap and OpenTAP consumer docs: Stream F is merged (#11); G/H are independent. The OpenTAP contract stays contributor planning in `docs/` (not in MkDocs yet).
+
 ### Fixed
 
 - Queries retry the write+read pair after a timed-out read, flushing stale data first
