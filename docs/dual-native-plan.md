@@ -277,23 +277,29 @@ profiles so dialect resolution is not only `generic_*` / `TestDialect*`.
    transcript schema as existing fixtures. Both languages assert **values**.
 2. Add vendor profiles under `spec/vendors/` for instruments already in
    `model_registry.toml` (do not expand the registry):
-   - Keithley DMM6500 (`keithley_dmm6500`): `:SENS:FUNC "VOLT:DC";:READ?`
-     for un-ranged measure. Configure/initiate/fetch/read stay on generic
-     fallback. A ranged measure is a constant template plus `{range}`, so it
-     falls back to `:MEAS:VOLT:DC? 10`.
-   - Keysight N6705C (`keysight_n6705c`, 4 channels): channel-list SCPI
-     (`:VOLT {volts}, (@{channel})`). Omit `sense_enable` (N6705 uses INT/EXT,
-     not ON/OFF).
-3. `tools/gen-dialects.ts` loads `spec/vendors/*.json` and inserts those
-   profiles after non-generic TOML rows (CI `TestDialect*` fixtures stay
-   first) and before `generic_*`. Do not duplicate G vendors in
+   - Keithley DMM6500 (`keithley_dmm6500`): model glob `*DMM6500*` so
+     `*IDN?` model `MODEL DMM6500` matches. Un-ranged measure is
+     `:SENS:FUNC "VOLT:DC";:READ?`. Configure/initiate/fetch/read stay on
+     generic fallback. A ranged measure is a constant template plus `{range}`,
+     so it falls back to `:MEAS:VOLT:DC? 10` (explicit fallback test, **not**
+     complete vendor SCPI).
+   - Keysight N6705C (`keysight_n6705c`, 4 channels): manufacturer glob `*`
+     and model `N6705*` so Agilent or Keysight IDN matches. Channel-list SCPI
+     (`:VOLT {volts}, (@{channel})`). `sense_enable` is omitted (N6705 uses
+     INT/EXT, not ON/OFF) and stays on generic `:OUTP{channel}:SENS`.
+3. `tools/gen-dialects.ts` loads `spec/vendors/*.json`, checks them against
+   `vendors.schema.json` (id pattern, additionalProperties, required fields),
+   and inserts those profiles after non-generic TOML rows (CI `TestDialect*`
+   fixtures stay first) and before `generic_*`. Do not duplicate G vendors in
    `profiles.toml`. Existing PM/SA vendors stay in TOML.
 4. Do not attach vendors to `34461A` or `E36312A` — those stay generic in
    mock catalog and `spec/scpi-vectors.json`.
 5. Both Rust and C# transcript tests consume the same JSON (sync only).
+   Transcripts prove typed-class SCPI for the injected identity; they are
+   **not** proof a live `*IDN?` matches until H runs on hardware.
 
 **Does not:** Hardware smoke (H). More classes’ transcripts (can follow after G
-if needed). Registry expansion.
+if needed). Registry expansion. A complete DMM6500 ranged-measure dialect.
 
 ---
 
