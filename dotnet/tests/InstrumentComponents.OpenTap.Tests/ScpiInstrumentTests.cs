@@ -121,8 +121,8 @@ public class ScpiInstrumentTests
         Assert.Equal("DMM1", instrument.IdentityFields.Model);
 
         instrument.AttachSession(second);
-        instrument.Open();
 
+        Assert.True(instrument.IsConnected);
         Assert.Equal("34461A", instrument.IdentityFields.Model);
         Assert.False(first.Disposed);
         Assert.False(second.Disposed);

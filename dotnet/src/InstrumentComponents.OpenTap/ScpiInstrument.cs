@@ -47,9 +47,10 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     public void AttachSession(IScpiIo io)
     {
         _attached = io ?? throw new ArgumentNullException(nameof(io));
-        _session?.Dispose();
-        _session = null;
-        _supportedKinds = [];
+        var reconnect = IsConnected;
+        DropSession();
+        if (reconnect)
+            ConnectAttached();
     }
 
     public override void Open()
@@ -63,44 +64,16 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
         if (IsConnected && _session is not null)
             return;
 
-        _session?.Dispose();
-        _session = null;
-        _supportedKinds = [];
-        _attached.IoTimeout = TimeSpan.FromMilliseconds(ClampTimeout());
-        _session = InstrumentSession.FromIo(
-            ParseOrFallback(VisaAddress),
-            _attached,
-            _identity,
-            ownsIo: false);
-        try
-        {
-            var idn = _session.Idn();
-            _identity.Manufacturer = idn.Manufacturer;
-            _identity.Model = idn.Model;
-            _identity.Serial = idn.Serial;
-            _identity.Firmware = idn.Firmware;
-            IdentityFields.CopyFrom(idn);
-            RefreshSupportedKinds(idn);
-        }
-        catch
-        {
-            _session.Dispose();
-            _session = null;
-            _supportedKinds = [];
-            ClearIdentity();
-            throw;
-        }
-
-        base.Open();
+        ConnectAttached();
+        if (!IsConnected)
+            base.Open();
     }
 
     public override void Close()
     {
-        var session = _session;
-        _session = null;
-        _supportedKinds = [];
-        session?.Dispose();
-        base.Close();
+        DropSession();
+        if (IsConnected)
+            base.Close();
     }
 
     public Idn QueryIdn() => RequireSession().Idn();
@@ -132,6 +105,49 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
 
     public SpectrumAnalyzer AsSpectrumAnalyzer() =>
         View(InstrumentKind.SpectrumAnalyzer, session => new SpectrumAnalyzer(session));
+
+    private void ConnectAttached()
+    {
+        if (_attached is null)
+        {
+            throw new InvalidOperationException(
+                "No SCPI session attached. The host must call AttachSession (or the IScpiIo constructor) before Open. This pack does not open a vendor VISA resource manager.");
+        }
+
+        DropSession();
+        _attached.IoTimeout = TimeSpan.FromMilliseconds(ClampTimeout());
+        _session = InstrumentSession.FromIo(
+            ParseOrFallback(VisaAddress),
+            _attached,
+            _identity,
+            ownsIo: false);
+        try
+        {
+            var idn = _session.Idn();
+            _identity.Manufacturer = idn.Manufacturer;
+            _identity.Model = idn.Model;
+            _identity.Serial = idn.Serial;
+            _identity.Firmware = idn.Firmware;
+            IdentityFields.CopyFrom(idn);
+            RefreshSupportedKinds(idn);
+        }
+        catch
+        {
+            DropSession();
+            ClearIdentity();
+            if (IsConnected)
+                base.Close();
+            throw;
+        }
+    }
+
+    private void DropSession()
+    {
+        var session = _session;
+        _session = null;
+        _supportedKinds = [];
+        session?.Dispose();
+    }
 
     private T View<T>(InstrumentKind kind, Func<InstrumentSession, T> factory)
     {
