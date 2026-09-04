@@ -1,4 +1,5 @@
 using InstrumentComponents.Classes;
+using InstrumentComponents.Kind;
 using InstrumentComponents.Scpi;
 using OpenTap;
 
@@ -10,6 +11,8 @@ public sealed class DmmInstrument : ScpiInstrument
     public DmmInstrument() => Name = "DMM";
 
     public DmmInstrument(IScpiIo io) : base(io) => Name = "DMM";
+
+    protected override InstrumentKind PrimaryKind => InstrumentKind.Dmm;
 
     public Dmm Dmm => AsDmm();
 
@@ -23,6 +26,8 @@ public sealed class DcPowerSupplyInstrument : ScpiInstrument
 
     public DcPowerSupplyInstrument(IScpiIo io) : base(io) => Name = "DC Power Supply";
 
+    protected override InstrumentKind PrimaryKind => InstrumentKind.DcPowerSupply;
+
     public DcPowerSupply Supply => AsDcPowerSupply();
 
     public override void OutputOff() => AsDcPowerSupply().OutputOff();
@@ -34,6 +39,8 @@ public sealed class FunctionGeneratorInstrument : ScpiInstrument
     public FunctionGeneratorInstrument() => Name = "Function Generator";
 
     public FunctionGeneratorInstrument(IScpiIo io) : base(io) => Name = "Function Generator";
+
+    protected override InstrumentKind PrimaryKind => InstrumentKind.FunctionGenerator;
 
     public FunctionGenerator Generator => AsFunctionGenerator();
 
@@ -47,6 +54,8 @@ public sealed class OscilloscopeInstrument : ScpiInstrument
 
     public OscilloscopeInstrument(IScpiIo io) : base(io) => Name = "Oscilloscope";
 
+    protected override InstrumentKind PrimaryKind => InstrumentKind.Oscilloscope;
+
     public Oscilloscope Scope => AsOscilloscope();
 
     public override void OutputOff() => AsOscilloscope().OutputOff();
@@ -58,6 +67,8 @@ public sealed class SwitchInstrument : ScpiInstrument
     public SwitchInstrument() => Name = "Switch";
 
     public SwitchInstrument(IScpiIo io) : base(io) => Name = "Switch";
+
+    protected override InstrumentKind PrimaryKind => InstrumentKind.Switch;
 
     public Classes.Switch Matrix => AsSwitch();
 
@@ -71,6 +82,8 @@ public sealed class CounterInstrument : ScpiInstrument
 
     public CounterInstrument(IScpiIo io) : base(io) => Name = "Counter";
 
+    protected override InstrumentKind PrimaryKind => InstrumentKind.Counter;
+
     public Counter Counter => AsCounter();
 
     public override void OutputOff() => AsCounter().OutputOff();
@@ -83,6 +96,8 @@ public sealed class PowerMeterInstrument : ScpiInstrument
 
     public PowerMeterInstrument(IScpiIo io) : base(io) => Name = "Power Meter";
 
+    protected override InstrumentKind PrimaryKind => InstrumentKind.PowerMeter;
+
     public PowerMeter Meter => AsPowerMeter();
 
     public override void OutputOff() => AsPowerMeter().OutputOff();
@@ -94,6 +109,8 @@ public sealed class SpectrumAnalyzerInstrument : ScpiInstrument
     public SpectrumAnalyzerInstrument() => Name = "Spectrum Analyzer";
 
     public SpectrumAnalyzerInstrument(IScpiIo io) : base(io) => Name = "Spectrum Analyzer";
+
+    protected override InstrumentKind PrimaryKind => InstrumentKind.SpectrumAnalyzer;
 
     public SpectrumAnalyzer Analyzer => AsSpectrumAnalyzer();
 

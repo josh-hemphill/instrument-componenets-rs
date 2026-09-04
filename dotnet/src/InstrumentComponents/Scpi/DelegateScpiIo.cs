@@ -24,7 +24,7 @@ public sealed class DelegateScpiIo : IScpiIo
         _query = query ?? throw new ArgumentNullException(nameof(query));
         _onTimeoutChanged = onTimeoutChanged;
         _onDispose = onDispose;
-        _ioTimeout = ioTimeout ?? TimeSpan.FromSeconds(5);
+        IoTimeout = ioTimeout ?? TimeSpan.FromSeconds(5);
     }
 
     public TimeSpan IoTimeout

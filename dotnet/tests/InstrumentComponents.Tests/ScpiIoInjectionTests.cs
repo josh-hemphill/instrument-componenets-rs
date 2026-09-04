@@ -67,6 +67,7 @@ public class ScpiIoInjectionTests
             ioTimeout: TimeSpan.FromSeconds(1),
             onTimeoutChanged: t => forwarded = t);
 
+        Assert.Equal(TimeSpan.FromSeconds(1), forwarded);
         io.IoTimeout = TimeSpan.FromMilliseconds(400);
         Assert.Equal(TimeSpan.FromMilliseconds(400), forwarded);
         Assert.Equal("A,B,C,D", io.Query("*IDN?"));

@@ -44,8 +44,13 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     public ScpiIdentityFields IdentityFields { get; set; } = new();
 
     /// <summary>Host injects an already-open message session after TestPlan.Load.</summary>
-    public void AttachSession(IScpiIo io) =>
+    public void AttachSession(IScpiIo io)
+    {
         _attached = io ?? throw new ArgumentNullException(nameof(io));
+        _session?.Dispose();
+        _session = null;
+        _supportedKinds = [];
+    }
 
     public override void Open()
     {
@@ -82,6 +87,7 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
             _session.Dispose();
             _session = null;
             _supportedKinds = [];
+            ClearIdentity();
             throw;
         }
 
@@ -102,6 +108,9 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     public void Reset() => RequireSession().Reset();
 
     public abstract void OutputOff();
+
+    /// <summary>Kind of this OpenTAP resource type; extra views of other kinds are classified.</summary>
+    protected abstract InstrumentKind PrimaryKind { get; }
 
     public Dmm AsDmm() => View(InstrumentKind.Dmm, session => new Dmm(session));
 
@@ -127,9 +136,13 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     private T View<T>(InstrumentKind kind, Func<InstrumentSession, T> factory)
     {
         var session = RequireSession();
-        var known = _supportedKinds.Where(k => k != InstrumentKind.Unknown).Distinct().ToList();
-        if (known.Count > 0)
-            SessionHelpers.EnsureKindSupported(session.Address, kind, known);
+        if (kind != PrimaryKind)
+        {
+            var known = _supportedKinds.Where(k => k != InstrumentKind.Unknown).Distinct().ToList();
+            if (known.Count > 0)
+                SessionHelpers.EnsureKindSupported(session.Address, kind, known);
+        }
+
         return factory(session);
     }
 
@@ -137,6 +150,18 @@ public abstract class ScpiInstrument : Instrument, IInstrumentIdentity, IInstrum
     {
         var (_, classified) = Classifier.Classifier.ClassifyFromIdentity(idn, ModelRegistry.Embedded());
         _supportedKinds = classified.Select(k => k.Kind).Distinct().ToList();
+    }
+
+    private void ClearIdentity()
+    {
+        _identity.Manufacturer = null;
+        _identity.Model = null;
+        _identity.Serial = null;
+        _identity.Firmware = null;
+        IdentityFields.Manufacturer = string.Empty;
+        IdentityFields.Model = string.Empty;
+        IdentityFields.Serial = string.Empty;
+        IdentityFields.Firmware = string.Empty;
     }
 
     protected InstrumentSession RequireSession() =>

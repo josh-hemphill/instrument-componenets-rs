@@ -92,6 +92,44 @@ public class ScpiInstrumentTests
     }
 
     [Fact]
+    public void PrimaryShutdownSkipsKindGuardWhenIdnIsADifferentClass()
+    {
+        var io = new ScriptedIo(("*IDN?", "Keysight Technologies,E36312A,SN,1.0"));
+        var instrument = new DmmInstrument(io) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        try
+        {
+            instrument.OutputOff();
+            instrument.Reset();
+            Assert.Contains("*RST", io.Writes);
+            Assert.NotNull(instrument.AsDcPowerSupply());
+            Assert.Throws<UnsupportedKindException>(() => instrument.AsOscilloscope());
+        }
+        finally
+        {
+            instrument.Close();
+        }
+    }
+
+    [Fact]
+    public void AttachSessionRebindsLiveInstrument()
+    {
+        var first = new ScriptedIo(("*IDN?", "Acme,DMM1,1,1.0"));
+        var second = new ScriptedIo(("*IDN?", "Keysight Technologies,34461A,SN,1.0"));
+        var instrument = new DmmInstrument(first) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        Assert.Equal("DMM1", instrument.IdentityFields.Model);
+
+        instrument.AttachSession(second);
+        instrument.Open();
+
+        Assert.Equal("34461A", instrument.IdentityFields.Model);
+        Assert.False(first.Disposed);
+        Assert.False(second.Disposed);
+        instrument.Close();
+    }
+
+    [Fact]
     public void ExtraViewsThrowWhenRegistryKindsExcludeRequestedKind()
     {
         var io = new ScriptedIo(("*IDN?", "Keysight Technologies,34461A,MY000,A.03.03"));
