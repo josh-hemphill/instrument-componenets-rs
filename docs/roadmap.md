@@ -4,7 +4,7 @@ Dual-native work follows [dual-native-plan.md](dual-native-plan.md). Streams A�
 
 **Still deferred:** package publishing (`0.2.0`), UniFFI, process-supervised HAL, IVI Config Store / `IIvi*` conformance, vendor VISA on GitHub-hosted CI.
 
-**Parallel (C# only, does not block G/H):** optional OpenTAP pack + session injection for HardwareTest — see [opentap-consumer.md](opentap-consumer.md). F is already merged; this track does not implement G or H.
+**Parallel (C# only, does not block G/H):** OpenTAP pack shipping **all eight** instrument types plus session injection for HardwareTest — see [opentap-consumer.md](opentap-consumer.md). F is already merged; this track does not implement G or H.
 
 Neither NI nor Keysight ships a CI-loadable VISA/instrument emulator. GitHub-hosted CI stays on MockTransport + transcripts. See [Hardware emulators](dual-native-plan.md#hardware-emulators-ni--keysight).
 
