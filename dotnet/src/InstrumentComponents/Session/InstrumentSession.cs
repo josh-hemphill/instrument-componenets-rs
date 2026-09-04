@@ -33,6 +33,29 @@ public sealed class InstrumentSession : IDisposable
         Scpi = scpi;
     }
 
+    /// <summary>
+    /// Builds a session over host-owned message I/O (no VISA open, no extra framing).
+    /// </summary>
+    public static InstrumentSession FromIo(
+        ResourceAddress address,
+        IScpiIo io,
+        DeviceIdentity identity,
+        CommsDiagnostics? diagnostics = null)
+    {
+        ArgumentNullException.ThrowIfNull(io);
+        var scpi = new ScpiSession(io);
+        if (diagnostics is not null)
+            scpi = scpi.WithDiagnostics(diagnostics);
+        return new InstrumentSession(address, scpi, identity);
+    }
+
+    private InstrumentSession(ResourceAddress address, ScpiSession scpi, DeviceIdentity identity)
+    {
+        Address = address;
+        Scpi = scpi;
+        _identity = identity;
+    }
+
     public string AddressStr => Address.Raw;
     public DeviceIdentity Identity => _identity;
 
