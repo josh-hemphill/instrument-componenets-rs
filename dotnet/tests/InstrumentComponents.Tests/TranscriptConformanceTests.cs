@@ -11,6 +11,8 @@ public class TranscriptConformanceTests
     [InlineData("scope_ds1054z.json", 7)]
     [InlineData("switch_34970a.json", 2)]
     [InlineData("counter_53230a.json", 2)]
+    [InlineData("dmm_dmm6500.json", 4)]
+    [InlineData("psu_n6705c.json", 4)]
     public void LoadsSharedFixture(string fileName, int expectedSteps)
     {
         var json = File.ReadAllText(FixturePath(fileName));

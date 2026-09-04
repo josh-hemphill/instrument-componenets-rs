@@ -57,4 +57,23 @@ public class TranscriptBehaviorTests
         var counter = new Counter(SessionFromFixture("counter_53230a.json", "Keysight Technologies", "53230A"));
         Assert.Equal(1000.0, counter.MeasureFrequency(), precision: 9);
     }
+
+    [Fact]
+    public void DmmDmm6500MeasureVoltageDc()
+    {
+        // Live *IDN? often reports model "MODEL DMM6500". Ranged measure falls back to generic :MEAS.
+        var dmm = new Dmm(SessionFromFixture("dmm_dmm6500.json", "Keithley Instruments", "MODEL DMM6500"));
+        Assert.Equal(1.2345, dmm.MeasureVoltageDc(), precision: 9);
+        Assert.Equal(10.001, dmm.MeasureVoltageDc(10), precision: 9);
+    }
+
+    [Fact]
+    public void PsuN6705cSetAndReadVoltage()
+    {
+        var psu = new DcPowerSupply(SessionFromFixture("psu_n6705c.json", "Agilent Technologies", "N6705C"));
+        Assert.Equal(4u, psu.ChannelCount);
+        psu.SetVoltage(1, 3.3);
+        psu.OutputEnable(1, true);
+        Assert.Equal(3.3, psu.ReadVoltage(1), precision: 9);
+    }
 }

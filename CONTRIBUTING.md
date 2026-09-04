@@ -71,7 +71,7 @@ Registry entries are **hints only** — capability probes and `*IDN?` can overri
 
 ## Shared SCPI / probe tables
 
-Shared TOML is the source of truth. Never hand-edit generated files (`scpi_commands.rs`, `ScpiCommands.cs`, `dialect.rs`, `DialectRegistry.cs`, `probes.rs`, `CapabilityProbes.cs`, `model_registry.json`).
+Shared TOML is the source of truth for generic commands and CI dialect fixtures. Hardware vendor dialects for DMM/PSU live under `spec/vendors/`. Never hand-edit generated files (`scpi_commands.rs`, `ScpiCommands.cs`, `dialect.rs`, `DialectRegistry.cs`, `probes.rs`, `CapabilityProbes.cs`, `model_registry.json`).
 
 Edit TOML under `crates/instrument-core/data/`, then:
 

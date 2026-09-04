@@ -1,12 +1,13 @@
 # Dialect profiles — vendor SCPI variance contained in static specs.
-# Regenerate: deno run --allow-read --allow-write tools/gen-dialects.ts
+# Regenerate: deno run --allow-read --allow-write --allow-run=rustfmt tools/gen-dialects.ts
 #
 # Matching: first profile whose kind matches and manufacturer/model globs match IDN
 # (case-insensitive; `*` wildcard). Profiles are ordered; put specific dialects
 # before catch-all `generic_*` entries.
 #
 # `ci_*_dialect_wins` rows are CI fixtures (fake IDN `TestDialect*`), not hardware
-# vendors. Stream G adds real DMM/PSU vendor profiles.
+# vendors. Real DMM/PSU vendor profiles live under `spec/vendors/` and are merged
+# by the generator before `generic_*`.
 
 [[profile]]
 id = "ci_dmm_dialect_wins"
