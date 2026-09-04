@@ -3,8 +3,9 @@
 Contributor planning for how this library supports
 [dotnet-avalonia-hardwaretest-template](https://github.com/josh-hemphill/dotnet-avalonia-hardwaretest-template)
 without becoming a second operator shell. C# only; Rust stays dual-native for
-session, dialects, and mocks. Dual-native streams F–H are independent of this
-track.
+session, dialects, and mocks. Stream F is already merged
+([#11](https://github.com/josh-hemphill/instrument-components/pull/11)). G and H
+are independent of this track.
 
 **Status:** understanding locked from HardwareTest’s OpenTAP/VISA work; no pack
 code in this repo yet.
@@ -102,7 +103,7 @@ host injects a session and OpenTAP calls `Instrument.Open` during execute.
 
 Ship only if we want product `.TapPlan` files to reference types from this
 repo. The pack is C#-only and is **not** required for Rust, NuGet core, or
-dual-native F–H.
+dual-native G/H (F is already merged).
 
 | Rule | Detail |
 | --- | --- |
@@ -220,9 +221,10 @@ load, not the Visa package itself.
 
 ## Recommended path (this repo)
 
-Independent of dual-native F (dialect remaining classes) / G (transcripts) / H
-(hardware smoke). Do not block those. C# APIs below should stay thin enough that
-Rust does not need equivalents until a non-OpenTAP consumer wants `IScpiIo`.
+Independent of dual-native G (transcripts) / H (hardware smoke). F (dialect
+remaining classes) is already merged. Do not block G/H. C# APIs below should
+stay thin enough that Rust does not need equivalents until a non-OpenTAP
+consumer wants `IScpiIo`.
 
 ### P1 — Session injection seam (`InstrumentComponents` only)
 
