@@ -2,7 +2,8 @@
 //!
 //! GitHub-hosted CI never enables the `visa` feature for these tests.
 //! The self-hosted `Hardware smoke` workflow runs `dmm_measure_voltage_dc_smoke`
-//! with `INSTRUMENT_RESOURCE` set to one DMM.
+//! with `INSTRUMENT_RESOURCE` set to one DMM (`--ignored`).
+//! C# `HardwareFact` skips when the env var is unset; this Rust test asserts.
 #![cfg(feature = "visa")]
 
 use instrument::prelude::*;
@@ -11,6 +12,8 @@ use instrument_visa::{SharedRm, VisaSessionOpener};
 use std::sync::Arc;
 
 const RESOURCE_ENV: &str = "INSTRUMENT_RESOURCE";
+/// Rejects Keithley-style overload sentinels such as 9.9e37.
+const MAX_ABS_VOLTS: f64 = 1_000_000.0;
 
 fn require_instrument_resource() -> String {
     let raw = std::env::var(RESOURCE_ENV).unwrap_or_default();
@@ -49,6 +52,26 @@ fn device_for_resource(catalog: &DeviceCatalog, resource: &str) -> DeviceRef {
         .map(|d| d.address.raw.clone())
         .unwrap_or_else(|| panic!("{RESOURCE_ENV} not in catalog: {resource}"));
     catalog.device(&raw).expect("matched INSTRUMENT_RESOURCE")
+}
+
+fn expected_vendor_dmm_dialect(model: Option<&str>) -> Option<&'static str> {
+    let model = model.unwrap_or("").to_ascii_lowercase();
+    if model.contains("dmm6500") {
+        Some("keithley_dmm6500")
+    } else {
+        None
+    }
+}
+
+fn assert_sane_dc_voltage(volts: f64, model: Option<&str>) {
+    assert!(
+        volts.is_finite(),
+        "DMM reading was not finite: {volts} (model {model:?})"
+    );
+    assert!(
+        volts.abs() < MAX_ABS_VOLTS,
+        "DMM reading looks like overload/sentinel: {volts} (model {model:?})"
+    );
 }
 
 #[test]
@@ -110,15 +133,20 @@ fn dmm_measure_voltage_dc_smoke() {
     );
 
     let mut dmm = device.open_dmm().expect("open DMM");
+    let dialect = dmm.session().dialect_for(InstrumentKind::Dmm);
     let volts = dmm.measure_voltage_dc(None).expect("measure DC voltage");
-    assert!(
-        volts.is_finite(),
-        "DMM reading was not finite: {volts} (model {:?})",
-        discovered.identity.model
-    );
+    assert_sane_dc_voltage(volts, discovered.identity.model.as_deref());
     eprintln!(
-        "hardware smoke: {} {} @ {resource} → {volts} V DC",
+        "hardware smoke: {} {} dialect={} @ {resource} → {volts} V DC",
         discovered.identity.manufacturer.as_deref().unwrap_or("?"),
         discovered.identity.model.as_deref().unwrap_or("?"),
+        dialect.id,
     );
+    if let Some(expected) = expected_vendor_dmm_dialect(discovered.identity.model.as_deref()) {
+        assert_eq!(
+            dialect.id, expected,
+            "live IDN looks like a G vendor DMM but resolved dialect {}",
+            dialect.id
+        );
+    }
 }

@@ -33,7 +33,7 @@ internal static class HardwareResource
     }
 }
 
-/// <summary>Runs only when INSTRUMENT_RESOURCE is set (self-hosted smoke).</summary>
+/// <summary>Runs only when INSTRUMENT_RESOURCE is set (self-hosted smoke). Unset env skips; it does not fail.</summary>
 internal sealed class HardwareFactAttribute : FactAttribute
 {
     public HardwareFactAttribute()

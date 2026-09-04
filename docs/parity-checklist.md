@@ -35,7 +35,7 @@ Shared scenarios both implementations must cover. Update this table when adding 
 | Address parse | core address tests | `AddressTests` | |
 | Classifier / registry | core classifier + registry | `ClassifierTests`, registry hints in `NewInstrumentKindTests` | |
 | Hardware discover smoke | `crates/instrument/tests/hardware.rs` (`#[ignore]`) | `HardwareTests.DiscoverRealDevices` (skipped) | Local VISA only |
-| Hardware DMM smoke | same, `dmm_measure_voltage_dc_smoke` | `HardwareTests.DmmMeasureVoltageDcSmoke` | Self-hosted `Hardware smoke` workflow; `INSTRUMENT_RESOURCE` |
+| Hardware DMM smoke | same, `dmm_measure_voltage_dc_smoke` | `HardwareTests.DmmMeasureVoltageDcSmoke` | Self-hosted `Hardware smoke` workflow; logs dialect id; `|V|<1e6`; DMM6500 asserts `keithley_dmm6500` |
 | Mock example runnable | `examples/mock_fixture_ci` | `dotnet/examples/MockFixtureCi` | |
 | Async mock example | `examples/mock_fixture_ci_async` | `dotnet/examples/MockFixtureCiAsync` | |
 | Discover example | `examples/discover` | `dotnet/examples/Discover` | Needs VISA |

@@ -324,10 +324,17 @@ stack).
 3. Smoke is **one class** (DMM) and **one resource**. Discovery uses
    `StaticEnumerator` / `StaticEnumerator.FromAddresses` so the rest of the
    bench is not probed. The instrument must classify as `Dmm`. Reading must
-   be finite. Dialect resolution from `*IDN?` still applies (DMM6500 uses
-   the vendor profile from G).
-4. A passing dispatch log is hardware evidence. Landing the workflow is not.
-   Do not discuss `0.2.0` until that log exists.
+   be finite and `|V| < 1e6` (reject overload sentinels). The log prints the
+   resolved dialect id. If the `*IDN?` model contains `DMM6500`, the dialect
+   must be `keithley_dmm6500` (G vendor evidence). Other DMMs only prove
+   VISA open + some SCPI.
+4. C# `HardwareFact` **skips** when `INSTRUMENT_RESOURCE` is unset. Rust
+   `#[ignore]` tests **assert** if you pass `--ignored` without the env.
+   The workflow always sets the env.
+5. A passing dispatch log is hardware evidence. Landing the workflow is not.
+   Do not discuss `0.2.0` until that log exists. After G merges, retarget
+   this PR to `latest` so GitHub-hosted CI compiles `hardware.rs` and runs
+   `Visa.Tests` (`Category!=Hardware`).
 
 **Does not:** NI-VISA / Keysight IO Libraries on `ubuntu-latest`. PyVISA-sim.
 Changing MockTransport CI (`ci.yml` / `dotnet.yml` mock jobs). PSU smoke.

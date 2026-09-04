@@ -12,6 +12,9 @@ namespace InstrumentComponents.Visa.Tests;
 
 public class HardwareTests
 {
+    /// <summary>Rejects Keithley-style overload sentinels such as 9.9e37.</summary>
+    private const double MaxAbsVolts = 1_000_000;
+
     [Fact(Skip = "requires VISA runtime and connected instruments")]
     [Trait("Category", "Hardware")]
     public void DiscoverRealDevices()
@@ -38,12 +41,17 @@ public class HardwareTests
             $"{HardwareResource.VariableName} is not reachable ({resource}): {device.Discovered.Error}");
         Assert.Contains(InstrumentKind.Dmm, device.SupportedKinds);
 
-        var volts = device.OpenDmm().MeasureVoltageDc();
+        var dmm = device.OpenDmm();
+        var dialect = dmm.Session.DialectFor(InstrumentKind.Dmm);
+        var volts = dmm.MeasureVoltageDc();
         Assert.True(
-            double.IsFinite(volts),
-            $"DMM reading was not finite: {volts} (model {device.Discovered.Identity.Model})");
+            double.IsFinite(volts) && Math.Abs(volts) < MaxAbsVolts,
+            $"DMM reading looks like overload/sentinel: {volts} (model {device.Discovered.Identity.Model})");
         Console.Error.WriteLine(
-            $"hardware smoke: {device.Discovered.Identity.Manufacturer ?? "?"} {device.Discovered.Identity.Model ?? "?"} @ {resource} → {volts} V DC");
+            $"hardware smoke: {device.Discovered.Identity.Manufacturer ?? "?"} {device.Discovered.Identity.Model ?? "?"} dialect={dialect.Id} @ {resource} → {volts} V DC");
+        var model = device.Discovered.Identity.Model ?? "";
+        if (model.Contains("DMM6500", StringComparison.OrdinalIgnoreCase))
+            Assert.Equal("keithley_dmm6500", dialect.Id);
     }
 
     private static DeviceRef DeviceForResource(DeviceCatalog catalog, string resource)

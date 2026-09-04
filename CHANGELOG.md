@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Golden DMM/PSU transcripts (`fixtures/dmm_dmm6500.json`, `fixtures/psu_n6705c.json`) plus Keithley DMM6500 and Keysight N6705C vendor dialects
 - DMM6500 / N6705C dialect globs match live `*IDN?` shapes (`MODEL DMM6500`, Agilent N6705C)
 - Self-hosted `Hardware smoke` workflow (`workflow_dispatch`) that measures DC voltage on one DMM via `INSTRUMENT_RESOURCE`
+- Hardware smoke logs the resolved dialect id, asserts `keithley_dmm6500` for DMM6500 IDNs, and rejects overload-scale readings
 - C# examples: `DmmMeasure`, `ManualTcpip`, `DiscoverAsync`
 - Dual-native reliability plan (`docs/dual-native-plan.md`)
 - Release workflow requires the .NET CI workflow before crates.io or NuGet publish
