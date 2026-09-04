@@ -126,7 +126,7 @@ public static class DialectRegistry
             Id = "keithley_dmm6500",
             Kind = InstrumentKind.Dmm,
             ManufacturerGlob = "Keithley*",
-            ModelGlob = "DMM6500",
+            ModelGlob = "*DMM6500*",
             Channels = 1,
             Commands = new Dictionary<string, string>
             {
@@ -143,7 +143,7 @@ public static class DialectRegistry
         {
             Id = "keysight_n6705c",
             Kind = InstrumentKind.DcPowerSupply,
-            ManufacturerGlob = "Keysight*",
+            ManufacturerGlob = "*",
             ModelGlob = "N6705*",
             Channels = 4,
             Commands = new Dictionary<string, string>

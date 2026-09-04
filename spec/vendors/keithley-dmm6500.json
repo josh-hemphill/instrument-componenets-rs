@@ -3,8 +3,9 @@
   "id": "keithley_dmm6500",
   "kind": "Dmm",
   "manufacturerGlob": "Keithley*",
-  "modelGlob": "DMM6500",
+  "modelGlob": "*DMM6500*",
   "channels": 1,
+  "notes": "Un-ranged measure uses SENS:FUNC then READ. A ranged measure cannot fill this constant template, so it falls back to generic :MEAS:VOLT:DC? {range} — that is an explicit fallback test, not complete vendor SCPI.",
   "commands": {
     "measure_voltage_dc": ":SENS:FUNC \"VOLT:DC\";:READ?",
     "measure_voltage_ac": ":SENS:FUNC \"VOLT:AC\";:READ?",

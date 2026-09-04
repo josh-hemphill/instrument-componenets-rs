@@ -78,6 +78,55 @@ function requireNonEmptyString(value: unknown, label: string): string {
   return value;
 }
 
+const VENDOR_ID_PATTERN = /^[a-z][a-z0-9_]*$/;
+const VENDOR_OBJECT_KEYS = new Set([
+  "$schema",
+  "id",
+  "kind",
+  "manufacturerGlob",
+  "modelGlob",
+  "channels",
+  "notes",
+  "commands",
+]);
+
+function assertVendorSchema(name: string, raw: Record<string, unknown>): void {
+  for (const key of Object.keys(raw)) {
+    if (!VENDOR_OBJECT_KEYS.has(key)) {
+      throw new Error(`${name}: unexpected property ${JSON.stringify(key)} (vendors.schema.json additionalProperties: false)`);
+    }
+  }
+  const id = requireNonEmptyString(raw.id, `${name}: id`);
+  if (!VENDOR_ID_PATTERN.test(id)) {
+    throw new Error(`${name}: id ${JSON.stringify(id)} must match ${VENDOR_ID_PATTERN}`);
+  }
+  const kind = requireNonEmptyString(raw.kind, `${name}: kind`);
+  if (!KNOWN_KINDS.has(kind)) {
+    throw new Error(`${name}: unknown kind ${JSON.stringify(kind)}`);
+  }
+  requireNonEmptyString(raw.manufacturerGlob, `${name}: manufacturerGlob`);
+  requireNonEmptyString(raw.modelGlob, `${name}: modelGlob`);
+  if (raw.notes != null) {
+    requireNonEmptyString(raw.notes, `${name}: notes`);
+  }
+  const commandsRaw = raw.commands;
+  if (commandsRaw == null || typeof commandsRaw !== "object" || Array.isArray(commandsRaw)) {
+    throw new Error(`${name}: commands must be an object`);
+  }
+  const commandEntries = Object.entries(commandsRaw as Record<string, unknown>);
+  if (commandEntries.length === 0) {
+    throw new Error(`${name}: commands must not be empty`);
+  }
+  for (const [key, value] of commandEntries) {
+    requireNonEmptyString(value, `${name}: commands.${key}`);
+  }
+  if (raw.channels != null) {
+    if (typeof raw.channels !== "number" || !Number.isInteger(raw.channels) || raw.channels < 1) {
+      throw new Error(`${name}: channels must be a positive integer`);
+    }
+  }
+}
+
 function loadVendorJsonProfiles(): Profile[] {
   const dir = new URL("spec/vendors/", root);
   const names: string[] = [];
@@ -95,35 +144,17 @@ function loadVendorJsonProfiles(): Profile[] {
   return names.map((name) => {
     const path = new URL(name, dir);
     const raw = JSON.parse(Deno.readTextFileSync(path)) as Record<string, unknown>;
-    const id = requireNonEmptyString(raw.id, `${name}: id`);
-    const kind = requireNonEmptyString(raw.kind, `${name}: kind`);
-    if (!KNOWN_KINDS.has(kind)) {
-      throw new Error(`${name}: unknown kind ${JSON.stringify(kind)}`);
-    }
-    const commandsRaw = raw.commands;
-    if (commandsRaw == null || typeof commandsRaw !== "object" || Array.isArray(commandsRaw)) {
-      throw new Error(`${name}: commands must be an object`);
-    }
+    assertVendorSchema(name, raw);
     const commands: Record<string, string> = {};
-    for (const [key, value] of Object.entries(commandsRaw as Record<string, unknown>)) {
-      commands[key] = requireNonEmptyString(value, `${name}: commands.${key}`);
-    }
-    if (Object.keys(commands).length === 0) {
-      throw new Error(`${name}: commands must not be empty`);
-    }
-    let channels = 1;
-    if (raw.channels != null) {
-      if (typeof raw.channels !== "number" || !Number.isInteger(raw.channels) || raw.channels < 1) {
-        throw new Error(`${name}: channels must be a positive integer`);
-      }
-      channels = raw.channels;
+    for (const [key, value] of Object.entries(raw.commands as Record<string, unknown>)) {
+      commands[key] = value as string;
     }
     return {
-      id,
-      kind,
-      manufacturer_glob: requireNonEmptyString(raw.manufacturerGlob, `${name}: manufacturerGlob`),
-      model_glob: requireNonEmptyString(raw.modelGlob, `${name}: modelGlob`),
-      channels,
+      id: raw.id as string,
+      kind: raw.kind as string,
+      manufacturer_glob: raw.manufacturerGlob as string,
+      model_glob: raw.modelGlob as string,
+      channels: typeof raw.channels === "number" ? raw.channels : 1,
       commands,
     };
   });
