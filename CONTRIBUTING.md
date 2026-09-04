@@ -27,14 +27,16 @@ cargo test --workspace --no-default-features
 | `cargo test --workspace --no-default-features` | CI gate — mock path, no VISA |
 | `cargo test -p instrument-core --features async` | Async SCPI + mock transport |
 | `cargo test -p instrument-components --features tokio --no-default-features` | Async facade + catalog |
-| `cargo test -p instrument-components --features visa -- --ignored` | Local hardware smoke tests |
+| `cargo test -p instrument-components --features visa -- --ignored` | Local hardware tests (discover + IDN + DMM smoke) |
+| `INSTRUMENT_RESOURCE=... cargo test -p instrument-components --features visa --test hardware dmm_measure_voltage_dc_smoke -- --ignored --nocapture --exact` | Self-hosted DMM smoke (Rust) |
+| `INSTRUMENT_RESOURCE=... dotnet test dotnet/tests/InstrumentComponents.Visa.Tests --filter "FullyQualifiedName~DmmMeasureVoltageDcSmoke"` | Self-hosted DMM smoke (C#) |
 | `cargo check -p instrument-components --features visa,tokio` | Async + VISA compiles |
 | `cargo clippy -p instrument-core --features async -- -D warnings` | Async clippy |
 | `cargo check -p instrument-visa --features cross-compile --target x86_64-pc-windows-gnu` | Cross-compile repr check |
 | `dotnet test dotnet/tests/InstrumentComponents.Tests` | C# mock path |
 | `dotnet test dotnet/tests/InstrumentComponents.Visa.Tests --filter "Category!=Hardware"` | C# VISA package (no instruments) |
 
-CI does **not** link against VISA (no NI-VISA on GitHub-hosted runners). Hardware verification is local. The release workflow requires **both** the Rust `CI` and `.NET` workflows.
+CI does **not** link against VISA (no NI-VISA on GitHub-hosted runners). Hardware verification is local or the `Hardware smoke` workflow (`workflow_dispatch`, runner labels `self-hosted` + `visa`). The release workflow requires **both** the Rust `CI` and `.NET` workflows. Do not treat a green GitHub-hosted PR as hardware evidence.
 
 ## Code style
 
