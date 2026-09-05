@@ -39,6 +39,7 @@ jobs:
       - run: dotnet build dotnet/InstrumentComponents.sln --no-restore -c Release
       - run: dotnet test dotnet/tests/InstrumentComponents.Tests/InstrumentComponents.Tests.csproj --no-build -c Release
       - run: dotnet test dotnet/tests/InstrumentComponents.Visa.Tests/InstrumentComponents.Visa.Tests.csproj --no-build -c Release --filter "Category!=Hardware"
+      - run: dotnet test dotnet/tests/InstrumentComponents.OpenTap.Tests/InstrumentComponents.OpenTap.Tests.csproj --no-build -c Release
 
   build-visa-windows:
     name: Build VISA package (Windows)
