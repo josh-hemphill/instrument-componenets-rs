@@ -35,15 +35,17 @@ public sealed class InstrumentSession : IDisposable
 
     /// <summary>
     /// Builds a session over host-owned message I/O (no VISA open, no extra framing).
+    /// Pass <paramref name="ownsIo"/> false when the host retains I/O lifetime (OpenTAP pack).
     /// </summary>
     public static InstrumentSession FromIo(
         ResourceAddress address,
         IScpiIo io,
         DeviceIdentity identity,
-        CommsDiagnostics? diagnostics = null)
+        CommsDiagnostics? diagnostics = null,
+        bool ownsIo = true)
     {
         ArgumentNullException.ThrowIfNull(io);
-        var scpi = new ScpiSession(io);
+        var scpi = new ScpiSession(io, ownsIo);
         if (diagnostics is not null)
             scpi = scpi.WithDiagnostics(diagnostics);
         return new InstrumentSession(address, scpi, identity);

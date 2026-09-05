@@ -7,7 +7,14 @@ public class ArchitectureTests
     {
         var packDir = Path.Combine(RepoRoot(), "dotnet", "src", "InstrumentComponents.OpenTap");
         Assert.True(Directory.Exists(packDir), packDir);
-        string[] forbidden = ["Ivi.Visa", "GlobalResourceManager", "IviFoundation.Visa"];
+        string[] forbidden =
+        [
+            "Ivi.Visa",
+            "GlobalResourceManager",
+            "IviFoundation.Visa",
+            "HardwareTest.Core",
+            "InstrumentComponents.Visa",
+        ];
         foreach (var file in Directory.EnumerateFiles(packDir, "*.*", SearchOption.AllDirectories))
         {
             if (file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal) ||

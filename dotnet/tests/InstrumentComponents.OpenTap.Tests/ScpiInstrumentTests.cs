@@ -1,4 +1,5 @@
 using InstrumentComponents.Enumerator;
+using InstrumentComponents.Errors;
 using InstrumentComponents.OpenTap;
 using InstrumentComponents.Scpi;
 using OpenTap;
@@ -59,8 +60,149 @@ public class ScpiInstrumentTests
             dmm.Close();
         }
 
-        Assert.True(io.Disposed);
+        Assert.False(io.Disposed);
         Assert.Throws<InvalidOperationException>(() => dmm.QueryIdn());
+    }
+
+    [Fact]
+    public void CloseDoesNotDisposeSharedHostIo()
+    {
+        var io = new ScriptedIo(("*IDN?", "Acme,DMM1,SN-1,2.0"));
+        var dmm = new DmmInstrument(io) { VisaAddress = "mock://shared" };
+        var psu = new DcPowerSupplyInstrument(io) { VisaAddress = "mock://shared" };
+        dmm.Open();
+        psu.Open();
+
+        dmm.Close();
+
+        Assert.False(io.Disposed);
+        Assert.Equal("Acme", psu.QueryIdn().Manufacturer);
+        psu.Close();
+        Assert.False(io.Disposed);
+        io.Dispose();
+        Assert.True(io.Disposed);
+    }
+
+    [Fact]
+    public void VisaAddressCarriesVisaAddressAttribute()
+    {
+        var property = typeof(ScpiInstrument).GetProperty(nameof(ScpiInstrument.VisaAddress));
+        Assert.NotNull(property);
+        Assert.True(Attribute.IsDefined(property!, typeof(VisaAddressAttribute)));
+    }
+
+    [Fact]
+    public void PrimaryShutdownSkipsKindGuardWhenIdnIsADifferentClass()
+    {
+        var io = new ScriptedIo(("*IDN?", "Keysight Technologies,E36312A,SN,1.0"));
+        var instrument = new DmmInstrument(io) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        try
+        {
+            instrument.OutputOff();
+            instrument.Reset();
+            Assert.Contains("*RST", io.Writes);
+            Assert.NotNull(instrument.AsDcPowerSupply());
+            Assert.Throws<UnsupportedKindException>(() => instrument.AsOscilloscope());
+        }
+        finally
+        {
+            instrument.Close();
+        }
+    }
+
+    [Fact]
+    public void AttachSessionRebindsLiveInstrument()
+    {
+        var first = new ScriptedIo(("*IDN?", "Acme,DMM1,1,1.0"));
+        var second = new ScriptedIo(("*IDN?", "Keysight Technologies,34461A,SN,1.0"));
+        var instrument = new DmmInstrument(first) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        Assert.Equal("DMM1", instrument.IdentityFields.Model);
+
+        instrument.AttachSession(second);
+
+        Assert.True(instrument.IsConnected);
+        Assert.Equal("34461A", instrument.IdentityFields.Model);
+        Assert.False(first.Disposed);
+        Assert.False(second.Disposed);
+        instrument.Close();
+    }
+
+    [Fact]
+    public void ExtraViewsThrowWhenRegistryKindsExcludeRequestedKind()
+    {
+        var io = new ScriptedIo(("*IDN?", "Keysight Technologies,34461A,MY000,A.03.03"));
+        var instrument = new DmmInstrument(io) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        try
+        {
+            var ex = Assert.Throws<UnsupportedKindException>(() => instrument.AsDcPowerSupply());
+            Assert.Equal(InstrumentComponents.Kind.InstrumentKind.DcPowerSupply, ex.Kind);
+        }
+        finally
+        {
+            instrument.Close();
+        }
+    }
+
+    [Fact]
+    public void ExtraViewsAreAllowedWhenIdentityIsUnknown()
+    {
+        var io = new ScriptedIo(("*IDN?", "Acme,DMM1,1,1.0"));
+        var instrument = new DmmInstrument(io) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        try
+        {
+            var extra = instrument.AsDcPowerSupply();
+            Assert.NotNull(extra);
+        }
+        finally
+        {
+            instrument.Close();
+        }
+    }
+
+    [Fact]
+    public void OpenIsIdempotentWhenAlreadyConnected()
+    {
+        var io = new ScriptedIo(("*IDN?", "Acme,DMM1,SN-1,2.0"));
+        var instrument = new DmmInstrument(io) { VisaAddress = "mock://dmm" };
+        instrument.Open();
+        instrument.Open();
+        Assert.Equal(1, io.Queries.Count(q => q == "*IDN?"));
+        instrument.Close();
+    }
+
+    [Fact]
+    public void OpenFailsClosedWhenIdnThrows()
+    {
+        var io = new ThrowingIdnIo();
+        var instrument = new DmmInstrument(io) { VisaAddress = "mock://dmm" };
+        Assert.Throws<CommunicationException>(() => instrument.Open());
+        Assert.False(instrument.IsConnected);
+        Assert.False(io.Disposed);
+        Assert.Throws<InvalidOperationException>(() => instrument.QueryIdn());
+    }
+
+    [Fact]
+    public void DmmInstrumentRoundTripsVisaAddress()
+    {
+        var original = new DmmInstrument
+        {
+            Name = "Bench DMM",
+            VisaAddress = "TCPIP0::192.0.2.10::inst0::INSTR",
+            IoTimeoutMilliseconds = 2500,
+        };
+        var serializer = new TapSerializer();
+        var xml = serializer.SerializeToString(original);
+        Assert.Contains("DmmInstrument", xml, StringComparison.Ordinal);
+        Assert.Contains("TCPIP0::192.0.2.10::inst0::INSTR", xml, StringComparison.Ordinal);
+
+        var loaded = Assert.IsType<DmmInstrument>(
+            serializer.DeserializeFromString(xml, TypeData.FromType(typeof(DmmInstrument))));
+        Assert.Equal(original.VisaAddress, loaded.VisaAddress);
+        Assert.Equal(2500, loaded.IoTimeoutMilliseconds);
     }
 
     [Fact]
@@ -78,6 +220,8 @@ public class ScpiInstrumentTests
         {
             psu.Close();
         }
+
+        Assert.False(io.Disposed);
     }
 
     [Fact]
@@ -127,6 +271,7 @@ public class ScpiInstrumentTests
         }
 
         public List<string> Writes { get; } = [];
+        public List<string> Queries { get; } = [];
         public bool Disposed { get; private set; }
         public TimeSpan IoTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
@@ -139,6 +284,7 @@ public class ScpiInstrumentTests
         public string Query(string command)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            Queries.Add(command);
             return _queries.TryGetValue(command.Trim(), out var response) ? response : "";
         }
 
@@ -147,5 +293,19 @@ public class ScpiInstrumentTests
             _disposed = true;
             Disposed = true;
         }
+    }
+
+    private sealed class ThrowingIdnIo : IScpiIo
+    {
+        public bool Disposed { get; private set; }
+        public TimeSpan IoTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+        public void Write(string command)
+        {
+        }
+
+        public string Query(string command) => throw new InstrumentTimeoutException();
+
+        public void Dispose() => Disposed = true;
     }
 }

@@ -12,6 +12,7 @@ public sealed class ScpiSession : IScpiIo
 {
     private readonly ITransport? _transport;
     private readonly IScpiIo? _injected;
+    private readonly bool _ownsInjected;
     private readonly ConnectOptions _opts;
     private readonly List<byte> _readBuffer = new(4096);
     private bool? _systErrSupported;
@@ -34,10 +35,12 @@ public sealed class ScpiSession : IScpiIo
 
     /// <summary>
     /// Pass-through session: Write/Query go to <paramref name="injected"/> with no extra framing.
+    /// When <paramref name="ownsIo"/> is true, <see cref="Dispose"/> disposes the adapter.
     /// </summary>
-    public ScpiSession(IScpiIo injected)
+    public ScpiSession(IScpiIo injected, bool ownsIo = true)
     {
         _injected = injected ?? throw new ArgumentNullException(nameof(injected));
+        _ownsInjected = ownsIo;
         _opts = new ConnectOptions();
         _opts.PerOpTimeout = injected.IoTimeout;
     }
@@ -402,7 +405,8 @@ public sealed class ScpiSession : IScpiIo
     {
         if (_injected is not null)
         {
-            _injected.Dispose();
+            if (_ownsInjected)
+                _injected.Dispose();
             GC.SuppressFinalize(this);
             return;
         }
