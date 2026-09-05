@@ -7,10 +7,11 @@ using InstrumentComponents.Transport;
 
 namespace InstrumentComponents.Scpi;
 
-/// <summary>SCPI session over a transport.</summary>
-public sealed class ScpiSession : IDisposable
+/// <summary>SCPI session over a transport, or pass-through over injected message I/O.</summary>
+public sealed class ScpiSession : IScpiIo
 {
-    private readonly ITransport _transport;
+    private readonly ITransport? _transport;
+    private readonly IScpiIo? _injected;
     private readonly ConnectOptions _opts;
     private readonly List<byte> _readBuffer = new(4096);
     private bool? _systErrSupported;
@@ -31,20 +32,57 @@ public sealed class ScpiSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// Pass-through session: Write/Query go to <paramref name="injected"/> with no extra framing.
+    /// </summary>
+    public ScpiSession(IScpiIo injected)
+    {
+        _injected = injected ?? throw new ArgumentNullException(nameof(injected));
+        _opts = new ConnectOptions();
+        _opts.PerOpTimeout = injected.IoTimeout;
+    }
+
     public ScpiSession WithDiagnostics(CommsDiagnostics diagnostics)
     {
         _diagnostics = diagnostics;
         return this;
     }
 
-    public ITransport Transport => _transport;
+    public ITransport Transport => ByteTransport;
+
+    private ITransport ByteTransport =>
+        _transport ?? throw new InstrumentUnsupportedException("injected SCPI I/O has no byte transport");
+
     public ConnectOptions Options => _opts;
+
+    public bool IsInjected => _injected is not null;
+
+    /// <summary>I/O timeout for the next Write/Query. Injected sessions forward this to the host adapter.</summary>
+    public TimeSpan IoTimeout
+    {
+        get => _injected?.IoTimeout ?? _opts.IoTimeout();
+        set
+        {
+            if (_injected is not null)
+            {
+                _injected.IoTimeout = value;
+                _opts.PerOpTimeout = value;
+                return;
+            }
+
+            _opts.PerOpTimeout = value;
+            RestoreIoTimeout();
+        }
+    }
 
     /// <summary>Drains pending bytes from the transport read buffer.</summary>
     public void Flush()
     {
+        if (_injected is not null)
+            return;
+
         var shortTimeout = TimeSpan.FromMilliseconds(50);
-        _transport.SetReadTimeout(shortTimeout);
+        ByteTransport.SetReadTimeout(shortTimeout);
         var chunk = ArrayPool<byte>.Shared.Rent(256);
         try
         {
@@ -52,7 +90,7 @@ public sealed class ScpiSession : IDisposable
             {
                 try
                 {
-                    var n = _transport.Read(chunk);
+                    var n = ByteTransport.Read(chunk);
                     if (n == 0) break;
                 }
                 catch (InstrumentTimeoutException)
@@ -69,12 +107,24 @@ public sealed class ScpiSession : IDisposable
         _readBuffer.Clear();
     }
 
-    public void Write(string command) => WriteWithRetry(command, idempotent: false);
+    public void Write(string command)
+    {
+        if (_injected is not null)
+        {
+            WriteInjected(command);
+            return;
+        }
+
+        WriteWithRetry(command, idempotent: false);
+    }
 
     public string Query(string command) => QueryWithTimeout(command, EffectiveReadTimeout());
 
     public string QueryWithTimeout(string command, TimeSpan timeout)
     {
+        if (_injected is not null)
+            return QueryInjected(command, timeout);
+
         var maxAttempts = ScpiProtocol.MaxWriteAttempts(true, _opts.Retries);
         uint attempts = 0;
         while (true)
@@ -115,7 +165,7 @@ public sealed class ScpiSession : IDisposable
             _pendingCommand = command;
             try
             {
-                _transport.Write(data);
+                ByteTransport.Write(data);
                 RecordSuccess(CommsEventKind.WriteOk, command, attempts, started);
                 return;
             }
@@ -141,7 +191,7 @@ public sealed class ScpiSession : IDisposable
 
     private byte[] ReadResponse(TimeSpan timeout)
     {
-        _transport.SetReadTimeout(timeout);
+        ByteTransport.SetReadTimeout(timeout);
         _readBuffer.Clear();
         var command = _pendingCommand;
         var chunk = ArrayPool<byte>.Shared.Rent(1024);
@@ -153,7 +203,7 @@ public sealed class ScpiSession : IDisposable
                 int n;
                 try
                 {
-                    n = _transport.Read(chunk);
+                    n = ByteTransport.Read(chunk);
                 }
                 catch (InstrumentTimeoutException)
                 {
@@ -215,8 +265,60 @@ public sealed class ScpiSession : IDisposable
     private void RecordReconnect() =>
         _diagnostics?.RecordSuccess(CommsEventKind.Reconnect, null, 1, TimeSpan.Zero);
 
+    private void WriteInjected(string command)
+    {
+        var started = DateTime.UtcNow;
+        _pendingCommand = command;
+        try
+        {
+            _injected!.Write(command);
+            RecordSuccess(CommsEventKind.WriteOk, command, 1, started);
+        }
+        catch (InstrumentTimeoutException)
+        {
+            RecordFailure(CommsEventKind.Timeout, command, 1, started, "write timeout");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            RecordFailure(CommsEventKind.WriteFailed, command, 1, started, ex.Message);
+            throw;
+        }
+    }
+
+    private string QueryInjected(string command, TimeSpan timeout)
+    {
+        var previous = _injected!.IoTimeout;
+        _injected.IoTimeout = timeout;
+        var started = DateTime.UtcNow;
+        _pendingCommand = command;
+        try
+        {
+            var response = _injected.Query(command);
+            RecordSuccess(CommsEventKind.ReadOk, command, 1, started);
+            return response;
+        }
+        catch (InstrumentTimeoutException)
+        {
+            RecordFailure(CommsEventKind.Timeout, command, 1, started, "read timeout");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            RecordFailure(CommsEventKind.ReadFailed, command, 1, started, ex.Message);
+            throw;
+        }
+        finally
+        {
+            try { _injected.IoTimeout = previous; } catch { /* best-effort restore */ }
+        }
+    }
+
     private void TryReconnect()
     {
+        if (_transport is null)
+            return;
+
         try
         {
             _transport.Reconnect();
@@ -234,6 +336,9 @@ public sealed class ScpiSession : IDisposable
     /// Best-effort: a restore failure must not hide the original I/O result or fail session create.
     private void RestoreIoTimeout()
     {
+        if (_transport is null)
+            return;
+
         try
         {
             _transport.SetReadTimeout(_opts.IoTimeout());
@@ -295,6 +400,13 @@ public sealed class ScpiSession : IDisposable
 
     public void Dispose()
     {
+        if (_injected is not null)
+        {
+            _injected.Dispose();
+            GC.SuppressFinalize(this);
+            return;
+        }
+
         if (_transport is IDisposable disposable)
             disposable.Dispose();
         GC.SuppressFinalize(this);
