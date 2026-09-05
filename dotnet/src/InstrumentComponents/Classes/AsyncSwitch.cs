@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 
@@ -16,6 +17,15 @@ public sealed class AsyncSwitch
     public AsyncSwitch(AsyncInstrumentSession session) => _session = session;
 
     public AsyncInstrumentSession Session => _session;
+
+    public Task<Idn> QueryIdnAsync(CancellationToken cancellationToken = default) =>
+        _session.IdnAsync(cancellationToken);
+
+    public Task ResetAsync(CancellationToken cancellationToken = default) =>
+        _session.ResetAsync(cancellationToken);
+
+    public Task OutputOffAsync(CancellationToken cancellationToken = default) =>
+        OpenAllAsync(cancellationToken);
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Switch);
 

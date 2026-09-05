@@ -1,5 +1,6 @@
 using InstrumentComponents.Dialects;
 using InstrumentComponents.Errors;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -7,13 +8,19 @@ using InstrumentComponents.Scpi;
 namespace InstrumentComponents.Classes;
 
 /// <summary>Spectrum analyzer session view.</summary>
-public sealed class SpectrumAnalyzer
+public sealed class SpectrumAnalyzer : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public SpectrumAnalyzer(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    public void OutputOff() => SweepContinuous(false);
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.SpectrumAnalyzer);
 

@@ -1,5 +1,6 @@
 using InstrumentComponents.Dialects;
 using InstrumentComponents.Errors;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 
@@ -10,13 +11,19 @@ namespace InstrumentComponents.Classes;
 /// Path model: routes are matrix channel pairs (ch1, ch2). Use <see cref="PathLabel"/> for naming;
 /// IVI ClosePath maps to <see cref="CloseRoute"/>.
 /// </summary>
-public sealed class Switch
+public sealed class Switch : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public Switch(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    public void OutputOff() => OpenAll();
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Switch);
 

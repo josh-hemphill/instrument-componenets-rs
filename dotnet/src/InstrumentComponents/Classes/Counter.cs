@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -6,13 +7,22 @@ using InstrumentComponents.Scpi;
 namespace InstrumentComponents.Classes;
 
 /// <summary>Frequency counter session view (IVI-inspired / SCPI :MEASure, :COUNter).</summary>
-public sealed class Counter
+public sealed class Counter : IInstrumentIdentity, IInstrumentShutdown
 {
     private readonly InstrumentSession _session;
 
     public Counter(InstrumentSession session) => _session = session;
 
     public InstrumentSession Session => _session;
+
+    public Idn QueryIdn() => _session.Idn();
+
+    public void Reset() => _session.Reset();
+
+    /// <summary>Counters have no output stage; safe-shutdown is a no-op.</summary>
+    public void OutputOff()
+    {
+    }
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.Counter);
 

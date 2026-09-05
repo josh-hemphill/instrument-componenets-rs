@@ -1,4 +1,5 @@
 using InstrumentComponents.Dialects;
+using InstrumentComponents.Identity;
 using InstrumentComponents.Kind;
 using InstrumentComponents.Session;
 using InstrumentComponents.Scpi;
@@ -12,6 +13,19 @@ public sealed class AsyncDcPowerSupply
     public AsyncDcPowerSupply(AsyncInstrumentSession session) => _session = session;
 
     public AsyncInstrumentSession Session => _session;
+
+    public Task<Idn> QueryIdnAsync(CancellationToken cancellationToken = default) =>
+        _session.IdnAsync(cancellationToken);
+
+    public Task ResetAsync(CancellationToken cancellationToken = default) =>
+        _session.ResetAsync(cancellationToken);
+
+    public async Task OutputOffAsync(CancellationToken cancellationToken = default)
+    {
+        var count = ChannelCount;
+        for (var channel = 1u; channel <= count; channel++)
+            await OutputEnableAsync(channel, false, cancellationToken).ConfigureAwait(false);
+    }
 
     private DialectProfile Dialect => _session.DialectFor(InstrumentKind.DcPowerSupply);
 
